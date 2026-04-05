@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Unit Calculator – Convert between metric, imperial, Gujarati traditional units and more. Supports 5'10&quot; feet-inch format and Gujarati language." />
+  <title>Unit Calculator | એકમ કેલ્ક્યુલેટર</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Background Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚖️</div>
+        <div class="logo-text">
+          <span class="logo-en" id="logo-en">Unit Calc</span>
+          <span class="logo-gu" id="logo-gu">એકમ કેલ્ક્યુલેટર</span>
+        </div>
+      </div>
+      <div class="header-controls">
+        <button class="lang-toggle" id="lang-toggle" title="Toggle Language">
+          <span class="lang-en">🇮🇳 ગુજરાતી</span>
+          <span class="lang-gu hidden">🌐 English</span>
+        </button>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge" id="hero-badge">All Units · All Formats · Any Language</div>
+    <h1 class="hero-title" id="hero-title">
+      <span class="gradient-text">Smart Unit</span>
+      <br />Calculator
+    </h1>
+    <p class="hero-subtitle" id="hero-subtitle">
+      Convert metric, imperial, Gujarati traditional units and more
+    </p>
+  </section>
+
+  <!-- Category Tabs -->
+  <div class="tabs-wrapper">
+    <div class="tabs" id="tabs-container">
+      <button class="tab active" data-category="length" id="tab-length">
+        <span class="tab-icon">📏</span>
+        <span class="tab-label" data-en="Length" data-gu="લંબાઈ">Length</span>
+      </button>
+      <button class="tab" data-category="area" id="tab-area">
+        <span class="tab-icon">🔲</span>
+        <span class="tab-label" data-en="Area" data-gu="ક્ષેત્રફળ">Area</span>
+      </button>
+      <button class="tab" data-category="weight" id="tab-weight">
+        <span class="tab-icon">⚖️</span>
+        <span class="tab-label" data-en="Weight" data-gu="વજન">Weight</span>
+      </button>
+      <button class="tab" data-category="volume" id="tab-volume">
+        <span class="tab-icon">🧪</span>
+        <span class="tab-label" data-en="Volume" data-gu="જથ્થો">Volume</span>
+      </button>
+      <button class="tab" data-category="temperature" id="tab-temperature">
+        <span class="tab-icon">🌡️</span>
+        <span class="tab-label" data-en="Temperature" data-gu="તાપમાન">Temperature</span>
+      </button>
+      <button class="tab" data-category="speed" id="tab-speed">
+        <span class="tab-icon">💨</span>
+        <span class="tab-label" data-en="Speed" data-gu="ઝડપ">Speed</span>
+      </button>
+      <button class="tab" data-category="time" id="tab-time">
+        <span class="tab-icon">⏱️</span>
+        <span class="tab-label" data-en="Time" data-gu="સમય">Time</span>
+      </button>
+      <button class="tab" data-category="digital" id="tab-digital">
+        <span class="tab-icon">💾</span>
+        <span class="tab-label" data-en="Digital" data-gu="ડિજિટલ">Digital</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Calculator -->
+  <main class="main">
+    <div class="calculator-card" id="calculator-card">
+
+      <!-- Feet-inch special badge (only for length) -->
+      <!-- <div class="special-badge hidden" id="feet-badge">
+        <span class="badge-icon">✨</span>
+        <span id="badge-text">Supports 5′10″ foot-inch format for input & output</span>
+      </div> -->
+
+      <!-- Gujarati units badge -->
+      <div class="gujarati-badge hidden" id="gujarati-badge">
+        <span class="badge-icon">🏡</span>
+        <span id="guj-badge-text">Includes Gujarati traditional units: વાર, વીઘા, ગજ, ચોર્સ, ગૂઠ</span>
+      </div>
+
+      <!-- Converter Layout -->
+      <div class="converter-layout">
+
+        <!-- FROM -->
+        <div class="unit-panel from-panel">
+          <label class="panel-label" id="from-label">From</label>
+          <div class="input-row">
+            <input type="text" class="value-input" id="from-input" placeholder="Enter value…" autocomplete="off" />
+            <div class="feet-inch-hint hidden" id="feet-hint">
+              <small id="feet-hint-text">Try: 5'10" or 5ft 10in</small>
+            </div>
+          </div>
+          <div class="unit-select-wrapper">
+            <select class="unit-select" id="from-unit"></select>
+          </div>
+          <div class="formatted-display" id="from-formatted"></div>
+        </div>
+
+        <!-- Swap Button -->
+        <div class="swap-col">
+          <button class="swap-btn" id="swap-btn" title="Swap units">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- TO -->
+        <div class="unit-panel to-panel">
+          <label class="panel-label" id="to-label">To</label>
+          <div class="result-row">
+            <div class="result-display" id="result-display">—</div>
+          </div>
+          <div class="unit-select-wrapper">
+            <select class="unit-select" id="to-unit"></select>
+          </div>
+          <div class="formatted-display" id="to-formatted"></div>
+        </div>
+      </div>
+
+      <!-- Feet-Inch Detailed Output -->
+      <div class="feet-inch-output hidden" id="feet-inch-output">
+        <div class="fi-card">
+          <div class="fi-icon">👟</div>
+          <div class="fi-content">
+            <div class="fi-label" id="fi-label">Foot-Inch Format</div>
+            <div class="fi-value" id="fi-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- All Units Result Grid -->
+      <div class="all-results-section">
+        <div class="all-results-header">
+          <span id="all-label">All Equivalents</span>
+          <button class="copy-all-btn" id="copy-all-btn" title="Copy all results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg>
+            <span id="copy-all-text">Copy All</span>
+          </button>
+        </div>
+        <div class="results-grid" id="results-grid"></div>
+      </div>
+
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel" id="info-panel">
+      <div class="info-icon">💡</div>
+      <div class="info-content">
+        <div class="info-title" id="info-title">Quick Tips</div>
+        <ul class="info-list" id="info-list">
+          <li id="tip1">Type <strong>5'10"</strong> or <strong>5ft 10in</strong> to enter feet and inches</li>
+          <li id="tip2">Switch language to Gujarati for traditional units</li>
+          <li id="tip3">Click any result card to copy the value</li>
+          <li id="tip4">Use the swap button to reverse conversion</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p id="footer-text">Made with ❤️ for Gujarat | <strong>Unit Calculator</strong> | <em>Supports all standard +
+        traditional Gujarati units</em></p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
