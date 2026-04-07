@@ -107,6 +107,14 @@
         <span id="guj-badge-text">Includes Gujarati traditional units: વાર, વીઘા, ગજ, ચોર્સ, ગૂઠ</span>
       </div>
 
+      <!-- Height Compare Toggle Button -->
+      <div class="height-compare-toggle-wrapper hidden" id="height-compare-toggle-wrapper">
+        <button class="height-compare-btn" id="height-compare-btn">
+          <span class="hc-icon">🧍</span>
+          <span id="hc-btn-text">Compare Heights</span>
+        </button>
+      </div>
+
       <!-- Converter Layout -->
       <div class="converter-layout">
 
@@ -154,6 +162,56 @@
           <div class="fi-content">
             <div class="fi-label" id="fi-label">Foot-Inch Format</div>
             <div class="fi-value" id="fi-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Height Comparison Section -->
+      <div class="height-compare-section hidden" id="height-compare-section">
+        <div class="hc-header">
+          <h3 id="hc-title">Height Comparison</h3>
+          <button class="hc-close-btn" id="hc-close-btn">&times;</button>
+        </div>
+
+        <div class="hc-inputs">
+          <div class="hc-input-group">
+            <label id="hc-label-a">Person A</label>
+            <input type="text" id="hc-input-a" placeholder="e.g. 5'10&quot;" autocomplete="off" />
+          </div>
+          <div class="hc-vs">VS</div>
+          <div class="hc-input-group">
+            <label id="hc-label-b">Person B</label>
+            <input type="text" id="hc-input-b" placeholder="e.g. 6'2&quot;" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="hc-graph-container" id="hc-graph-container">
+          <div class="hc-y-axis" id="hc-y-axis">
+            <!-- ticks generated via JS -->
+          </div>
+          <div class="hc-graph-area" id="hc-graph-area">
+            <!-- Person A SVG -->
+            <div class="hc-person-wrapper" id="hc-person-a-wrapper">
+              <div class="hc-person-val" id="hc-val-a">--</div>
+              <!-- human SVG -->
+              <svg viewBox="0 0 100 300" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-a">
+                <path
+                  d="M50 10 C60 10 65 15 65 25 C65 35 60 40 50 40 C40 40 35 35 35 25 C35 15 40 10 50 10 Z 
+                                 M25 50 C20 50 20 60 25 60 L35 60 L35 280 C35 290 45 290 45 280 L45 160 L55 160 L55 280 C55 290 65 290 65 280 L65 60 L75 60 C80 60 80 50 75 50 Z" />
+              </svg>
+              <div class="hc-person-label" id="hc-name-a">A</div>
+            </div>
+            <!-- Person B SVG -->
+            <div class="hc-person-wrapper" id="hc-person-b-wrapper">
+              <div class="hc-person-val" id="hc-val-b">--</div>
+              <!-- human SVG -->
+              <svg viewBox="0 0 100 300" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-b">
+                <path
+                  d="M50 10 C60 10 65 15 65 25 C65 35 60 40 50 40 C40 40 35 35 35 25 C35 15 40 10 50 10 Z 
+                                 M25 50 C20 50 20 60 25 60 L35 60 L35 280 C35 290 45 290 45 280 L45 160 L55 160 L55 280 C55 290 65 290 65 280 L65 60 L75 60 C80 60 80 50 75 50 Z" />
+              </svg>
+              <div class="hc-person-label" id="hc-name-b">B</div>
+            </div>
           </div>
         </div>
       </div>

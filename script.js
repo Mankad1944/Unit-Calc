@@ -189,6 +189,10 @@ const STRINGS = {
     feetHint: 'Try: 5\'10" or 5ft 10in',
     copied: '✓ Copied!',
     copiedAll: '✓ All values copied!',
+    hcBtn: 'Compare Heights',
+    hcTitle: 'Height Comparison',
+    hcPersonA: 'Person A',
+    hcPersonB: 'Person B',
     logoEn: 'Unit Calc',
     logoGu: 'એકમ કેલ્ક્યુલેટર',
     langBtn: '🇮🇳 ગુજરાતી',
@@ -224,6 +228,10 @@ const STRINGS = {
     feetHint: 'ઉ. ક.: 5\'10" or 5ft 10in',
     copied: '✓ કૉ!',
     copiedAll: '✓ બ. ક.!',
+    hcBtn: 'ઊંચાઈની સરખામણી',
+    hcTitle: 'ઊંચાઈની સરખામણી',
+    hcPersonA: 'વ્યક્તિ A',
+    hcPersonB: 'વ્યક્તિ B',
     logoEn: 'Unit Calc',
     logoGu: 'એકમ કેલ્ક્યુ.',
     langBtn: '🌐 English',
@@ -411,6 +419,22 @@ const els = {
   footerText: $('footer-text'),
   // Toast
   toast: $('toast'),
+  // Height Compare
+  hcToggleWrapper: $('height-compare-toggle-wrapper'),
+  hcBtn: $('height-compare-btn'),
+  hcBtnText: $('hc-btn-text'),
+  hcSection: $('height-compare-section'),
+  hcCloseBtn: $('hc-close-btn'),
+  hcTitle: $('hc-title'),
+  hcLabelA: $('hc-label-a'),
+  hcLabelB: $('hc-label-b'),
+  hcInputA: $('hc-input-a'),
+  hcInputB: $('hc-input-b'),
+  hcYAxis: $('hc-y-axis'),
+  hcPersonAWrap: $('hc-person-a-wrapper'),
+  hcPersonBWrap: $('hc-person-b-wrapper'),
+  hcValA: $('hc-val-a'),
+  hcValB: $('hc-val-b'),
 };
 
 // ──────────────────────────────────────────────
@@ -631,6 +655,12 @@ function applyLanguage() {
   els.fiLabel.textContent = S.feetLabel;
   els.infoTitle.textContent = S.infoTitle;
 
+  // Height Compare
+  if (els.hcBtnText) els.hcBtnText.textContent = S.hcBtn;
+  if (els.hcTitle) els.hcTitle.textContent = S.hcTitle;
+  if (els.hcLabelA) els.hcLabelA.textContent = S.hcPersonA;
+  if (els.hcLabelB) els.hcLabelB.textContent = S.hcPersonB;
+
   // Tips
   els.tip1.innerHTML = S.tip1;
   els.tip2.textContent = lang === 'en' ? 'Switch language for Gujarati traditional units' : 'ભ. બ. ગ. ઊ. ત. ઉ.';
@@ -675,8 +705,10 @@ function switchCategory(cat) {
   // Show/hide special badges
   const isLength = cat === 'length';
   const hasGuj = UNITS[cat].some(u => u.gujarati);
-  els.feetBadge.classList.toggle('hidden', !isLength);
-  els.gujaratiBadge.classList.toggle('hidden', !hasGuj);
+  if (els.feetBadge) els.feetBadge.classList.toggle('hidden', !isLength);
+  if (els.gujaratiBadge) els.gujaratiBadge.classList.toggle('hidden', !hasGuj);
+  if (els.hcToggleWrapper) els.hcToggleWrapper.classList.toggle('hidden', !isLength);
+  if (!isLength && els.hcSection) els.hcSection.classList.add('hidden'); // Close section if open
 
   // Show/hide feet hint
   const feetHintEl = document.querySelector('.feet-inch-hint');
@@ -799,10 +831,85 @@ els.themeToggle.addEventListener('click', () => {
 });
 
 // ──────────────────────────────────────────────
-//  16. INIT
+//  16. HEIGHT COMPARE LOGIC
+// ──────────────────────────────────────────────
+
+function initHeightCompare() {
+  if (!els.hcBtn) return;
+  els.hcBtn.addEventListener('click', () => {
+    els.hcSection.classList.remove('hidden');
+    els.hcToggleWrapper.classList.add('hidden');
+    updateHeightGraph();
+  });
+
+  els.hcCloseBtn.addEventListener('click', () => {
+    els.hcSection.classList.add('hidden');
+    els.hcToggleWrapper.classList.remove('hidden');
+  });
+
+  ['input', 'change'].forEach(evt => {
+    els.hcInputA.addEventListener(evt, updateHeightGraph);
+    els.hcInputB.addEventListener(evt, updateHeightGraph);
+  });
+}
+
+function updateHeightGraph() {
+  const valA = els.hcInputA.value.trim();
+  const valB = els.hcInputB.value.trim();
+
+  // Try parsing strictly as feet/inches first. Fallback to normal float if user enters numbers.
+  let mA = parseFeetInch(valA);
+  if (mA === null && parseFloat(valA)) {
+    const fromUnit = getUnit('length', state.fromKey);
+    mA = fromUnit ? fromUnit.toBase(parseFloat(valA)) : 0;
+  } else if (mA === null) mA = 0;
+
+  let mB = parseFeetInch(valB);
+  if (mB === null && parseFloat(valB)) {
+    const fromUnit = getUnit('length', state.fromKey);
+    mB = fromUnit ? fromUnit.toBase(parseFloat(valB)) : 0;
+  } else if (mB === null) mB = 0;
+
+  // Convert to display strings
+  const strA = mA > 0 ? metreToFeetInch(mA) : '--';
+  const strB = mB > 0 ? metreToFeetInch(mB) : '--';
+
+  els.hcValA.textContent = strA;
+  els.hcValB.textContent = strB;
+
+  // Render graph if valid
+  const maxM = Math.max(mA, mB, 1.5); // base scale at least 1.5m (~5ft)
+  const Y_AXIS_MAX = maxM * 1.25; // max Y is 25% taller than tallest person
+
+  // Draw Y Axis
+  els.hcYAxis.innerHTML = '';
+  // Generate ticks every 0.3048m (1 foot)
+  for (let mt = 0; mt <= Y_AXIS_MAX; mt += 0.3048) {
+    if (mt === 0) continue;
+    const pct = (mt / Y_AXIS_MAX) * 100;
+    const ft = Math.round(mt / 0.3048);
+    const tick = document.createElement('div');
+    tick.className = 'hc-tick';
+    tick.style.bottom = `${pct}%`;
+    tick.textContent = `${ft}′`;
+    els.hcYAxis.appendChild(tick);
+  }
+
+  // Update humans heights
+  const pctA = mA > 0 ? (mA / Y_AXIS_MAX) * 100 : 0;
+  const pctB = mB > 0 ? (mB / Y_AXIS_MAX) * 100 : 0;
+
+  els.hcPersonAWrap.style.height = `${pctA}%`;
+  els.hcPersonBWrap.style.height = `${pctB}%`;
+}
+
+
+// ──────────────────────────────────────────────
+//  17. INIT
 // ──────────────────────────────────────────────
 
 function init() {
+  initHeightCompare();
   applyTheme();
   switchCategory('length');
   applyLanguage();
