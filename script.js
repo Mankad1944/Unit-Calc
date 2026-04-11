@@ -196,7 +196,32 @@ const STRINGS = {
     logoEn: 'Unit Calc',
     logoGu: 'એકમ કેલ્ક્યુલેટર',
     langBtn: '🇮🇳 ગુજરાતી',
-    tabs: {
+      finCalc: 'Financial Calculator',
+      unitCalc: 'Unit Calculator',
+      principal: 'Principal Amount',
+      deposit: 'Deposit Amount',
+      monthlySip: 'Monthly SIP',
+      monthlyDeposit: 'Monthly Deposit',
+      yearlyDeposit: 'Yearly Deposit',
+      rate: 'Interest Rate (p.a. %)',
+      tenure: 'Tenure',
+      years: 'Years',
+      months: 'Months',
+      downpayment: 'Downpayment',
+      exchangeVal: 'Exchange Value',
+      procFee: 'Processing Fee %',
+      totalInvest: 'Total Investment',
+      estReturns: 'Estimated Returns',
+      maturityValue: 'Maturity Value',
+      totalInterest: 'Total Interest',
+      emi: 'Monthly EMI',
+      loanAmount: 'Net Loan Amount',
+      month: 'Month',
+      year: 'Year',
+      interestList: 'Interest/Return',
+      balance: 'Balance',
+      totalPayment: 'Total Payment',
+      tabs: {
       length: 'Length',
       area: 'Area',
       weight: 'Weight',
@@ -206,6 +231,18 @@ const STRINGS = {
       time: 'Time',
       digital: 'Digital',
     },
+      ppfYears: 'Tenure (min. 15 years)',
+      nscRepeat: 'Repetitions (1 = one 5-yr cycle)',
+      nscCycle: 'Cycle / Year',
+      repeat: 'Repeat',
+      prepayAmt: 'Prepayment Amount',
+      prepayMode: 'Prepayment Mode',
+      prepayReduceTenure: 'Reduce Tenure (keep same EMI)',
+      prepayReduceEmi: 'Reduce EMI (keep same tenure)',
+      newTenure: 'New Tenure',
+      tenureSaved: 'Tenure Saved',
+      newEmi: 'New EMI (after prepay)',
+      emiSaved: 'EMI Saved',
   },
   gu: {
     heroTitle: 'સ્માર્ટ એકમ<br/>કેલ્ક્યુલેટર',
@@ -235,7 +272,32 @@ const STRINGS = {
     logoEn: 'Unit Calc',
     logoGu: 'એકમ કેલ્ક્યુ.',
     langBtn: '🌐 English',
-    tabs: {
+      finCalc: 'આર્થિક કેલ્ક્યુલેટર',
+      unitCalc: 'એકમ કેલ્ક્યુલ.',
+      principal: 'મૂળ રકમ (Principal)',
+      deposit: 'જમા રકમ (Deposit)',
+      monthlySip: 'માસિક SIP',
+      monthlyDeposit: 'માસિક જમા (RD)',
+      yearlyDeposit: 'વાર્ષિક જમા',
+      rate: 'વ્યાજ દર (વાર્ષિક %)',
+      tenure: 'સમયગાળો',
+      years: 'વર્ષ',
+      months: 'મહિના',
+      downpayment: 'ડાઉનપેમેન્ટ',
+      exchangeVal: 'એક્સચેન્જ કિંમત',
+      procFee: 'પ્રોસેસિંગ ફી %',
+      totalInvest: 'કુલ રોકાણ',
+      estReturns: 'અંદાજિત વળતર',
+      maturityValue: 'પરિપક્વતા રકમ / કુલ રકમ',
+      totalInterest: 'કુલ વ્યાજ',
+      emi: 'માસિક EMI',
+      loanAmount: 'ચોખ્ખી લોન રકમ',
+      month: 'મહિનો',
+      year: 'વર્ષ',
+      interestList: 'વ્યાજ',
+      balance: 'બાકી રકમ',
+      totalPayment: 'કુલ ચૂકવણી',
+      tabs: {
       length: 'લ.',
       area: 'ક્ષ.',
       weight: 'વ.',
@@ -245,6 +307,18 @@ const STRINGS = {
       time: 'સ.',
       digital: 'ડ.',
     },
+      ppfYears: 'સમય (ઓ. 15 વ.)',
+      nscRepeat: 'પુનઃ (1 = 5 વ. ચક્ર)',
+      nscCycle: 'ચક્ર / વ.',
+      repeat: 'ચક્ર',
+      prepayAmt: 'અગ્ર ચૂ. રકમ',
+      prepayMode: 'અગ્ર ચૂ. પ્ર.',
+      prepayReduceTenure: 'સ. ઘ. (EMI સ.)',
+      prepayReduceEmi: 'EMI ઘ. (સ. સ.)',
+      newTenure: 'ન. સ.',
+      tenureSaved: 'સ. બ.',
+      newEmi: 'ન. EMI',
+      emiSaved: 'EMI બ.',
   },
 };
 
@@ -252,6 +326,8 @@ const STRINGS = {
 //  3. STATE
 // ──────────────────────────────────────────────
 let state = {
+  mode: 'unit',
+  finCategory: 'sip',
   lang: 'en',
   theme: 'dark',
   category: 'length',
@@ -387,6 +463,14 @@ const els = {
   heroSubtitle: $('hero-subtitle'),
   // Tabs
   tabsContainer: $('tabs-container'),
+  // Mode Switch
+  modeUnitBtn: $('mode-unit-btn'),
+  modeFinBtn: $('mode-fin-btn'),
+  unitTabsWrapper: $('unit-tabs-wrapper'),
+  finTabsWrapper: $('fin-tabs-wrapper'),
+  unitCalcSection: $('unit-calc-section'),
+  finCalcSection: $('fin-calc-section'),
+  finTabsContainer: $('fin-tabs-container'),
   // Badges
   feetBadge: $('feet-badge'),
   badgeText: $('badge-text'),
@@ -435,6 +519,12 @@ const els = {
   hcPersonBWrap: $('hc-person-b-wrapper'),
   hcValA: $('hc-val-a'),
   hcValB: $('hc-val-b'),
+  // Financial elements
+  finInputGrid: $('fin-input-grid'),
+  finSummaryGrid: $('fin-summary'),
+  finTableTitle: $('fin-table-title'),
+  finTableHead: $('fin-table-head'),
+  finTableBody: $('fin-table-body'),
 };
 
 // ──────────────────────────────────────────────
@@ -631,14 +721,17 @@ function applyLanguage() {
   }
 
   // Tabs
-  document.querySelectorAll('.tab-label').forEach(el => {
+  document.querySelectorAll('#tabs-container .tab-label').forEach(el => {
     const cat = el.getAttribute(`data-${lang}`);
     if (cat) el.textContent = cat;
   });
 
+  if ($('mode-unit-label')) $('mode-unit-label').textContent = S.unitCalc;
+  if ($('mode-fin-label')) $('mode-fin-label').textContent = S.finCalc;
+
   // Badges
-  els.badgeText.textContent = S.feetBadge;
-  els.gujBadgeText.textContent = S.gujBadge;
+  if (els.badgeText) els.badgeText.textContent = S.feetBadge;
+  if (els.gujBadgeText) els.gujBadgeText.textContent = S.gujBadge;
 
   // Panel labels
   $('from-label').textContent = S.fromLabel;
@@ -669,9 +762,10 @@ function applyLanguage() {
 
   els.footerText.innerHTML = S.footerText;
 
-  // Repopulate selects with translated labels
+  // Repopulate selects and inputs with translated labels
   populateSelects(state.category);
   calculate();
+  if(state.mode === 'fin') renderFinInputs(); // re-render fin labels
 }
 
 // ──────────────────────────────────────────────
@@ -696,7 +790,7 @@ function switchCategory(cat) {
   state.toKey = def.to;
 
   // Update tabs
-  document.querySelectorAll('.tab').forEach(t => {
+  document.querySelectorAll('#tabs-container .tab').forEach(t => {
     t.classList.toggle('active', t.dataset.category === cat);
   });
 
@@ -780,6 +874,14 @@ els.tabsContainer.addEventListener('click', e => {
   const tab = e.target.closest('.tab');
   if (tab) switchCategory(tab.dataset.category);
 });
+
+els.finTabsContainer.addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (tab) switchFinCategory(tab.dataset.fincat);
+});
+
+if(els.modeUnitBtn) els.modeUnitBtn.addEventListener('click', () => switchMode('unit'));
+if(els.modeFinBtn) els.modeFinBtn.addEventListener('click', () => switchMode('fin'));
 
 // Input
 els.fromInput.addEventListener('input', () => {
@@ -903,6 +1005,401 @@ function updateHeightGraph() {
   els.hcPersonBWrap.style.height = `${pctB}%`;
 }
 
+
+// ──────────────────────────────────────────────
+//  16.5 FINANCIAL ENGINE
+// ──────────────────────────────────────────────
+
+function switchMode(newMode) {
+  state.mode = newMode;
+  const isUnit = newMode === 'unit';
+  
+  els.modeUnitBtn.classList.toggle('active', isUnit);
+  els.modeFinBtn.classList.toggle('active', !isUnit);
+  
+  els.unitTabsWrapper.classList.toggle('hidden', !isUnit);
+  els.unitCalcSection.classList.toggle('hidden', !isUnit);
+  
+  els.finTabsWrapper.classList.toggle('hidden', isUnit);
+  els.finCalcSection.classList.toggle('hidden', isUnit);
+  
+  if (isUnit) {
+    switchCategory(state.category);
+  } else {
+    switchFinCategory(state.finCategory);
+  }
+}
+
+function switchFinCategory(cat) {
+  state.finCategory = cat;
+  document.querySelectorAll('#fin-tabs-container .tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.fincat === cat);
+  });
+  renderFinInputs();
+  calculateFin();
+}
+
+const FIN_CONFIG = {
+  sip: [
+    { id: 'monthlySip', labelKey: 'monthlySip', default: '5000', prefix: '₹' },
+    { id: 'rate', labelKey: 'rate', default: '12', suffix: '%' },
+    { id: 'years', labelKey: 'years', default: '10' }
+  ],
+  fd: [
+    { id: 'principal', labelKey: 'principal', default: '100000', prefix: '₹' },
+    { id: 'rate', labelKey: 'rate', default: '7.0', suffix: '%' },
+    { id: 'years', labelKey: 'years', default: '5' }
+  ],
+  rd: [
+    { id: 'monthlyDeposit', labelKey: 'monthlyDeposit', default: '5000', prefix: '₹' },
+    { id: 'rate', labelKey: 'rate', default: '6.5', suffix: '%' },
+    { id: 'years', labelKey: 'years', default: '5' }
+  ],
+  ppf: [
+    { id: 'yearlyDeposit', labelKey: 'yearlyDeposit', default: '150000', prefix: '₹' },
+    { id: 'rate', labelKey: 'rate', default: '7.1', suffix: '%' },
+    { id: 'years', labelKey: 'ppfYears', default: '15', min: 15 }
+  ],
+  nsc: [
+    { id: 'principal', labelKey: 'principal', default: '100000', prefix: '₹' },
+    { id: 'rate', labelKey: 'rate', default: '7.7', suffix: '%' },
+    { id: 'nscRepeat', labelKey: 'nscRepeat', default: '1' }
+  ],
+  loan: [
+    { id: 'principal', labelKey: 'principal', default: '500000', prefix: '₹' },
+    { id: 'downpayment', labelKey: 'downpayment', default: '0', prefix: '₹' },
+    { id: 'exchangeVal', labelKey: 'exchangeVal', default: '0', prefix: '₹' },
+    { id: 'rate', labelKey: 'rate', default: '8.5', suffix: '%' },
+    { id: 'years', labelKey: 'years', default: '5' },
+    { id: 'procFee', labelKey: 'procFee', default: '0', suffix: '%' },
+    { id: 'prepayAmt', labelKey: 'prepayAmt', default: '0', prefix: '₹' },
+    { id: 'prepayMode', labelKey: 'prepayMode', default: 'tenure', type: 'select', options: [
+      { value: 'tenure', labelKey: 'prepayReduceTenure' },
+      { value: 'emi',    labelKey: 'prepayReduceEmi' }
+    ]}
+  ]
+};
+
+function renderFinInputs() {
+  const cat = state.finCategory;
+  const config = FIN_CONFIG[cat];
+  const S = STRINGS[state.lang];
+  els.finInputGrid.innerHTML = '';
+  
+  config.forEach(field => {
+    const labelText = S[field.labelKey] || field.labelKey;
+    const pre = field.prefix ? `<span class="fin-input-prefix">${field.prefix}</span>` : '';
+    const suf = field.suffix ? `<span class="fin-input-suffix">${field.suffix}</span>` : '';
+    const existingVal = window[`fin_${field.id}`] !== undefined ? window[`fin_${field.id}`] : field.default; 
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'fin-input-wrapper';
+    
+    // Special: select field
+    if (field.type === 'select') {
+      const optionsHTML = (field.options || []).map(o =>
+        `<option value="${o.value}" ${existingVal === o.value ? 'selected' : ''}>${S[o.labelKey] || o.labelKey}</option>`
+      ).join('');
+      wrapper.innerHTML = `
+        <label class="fin-input-label">${labelText}</label>
+        <div class="fin-input-group">
+          <select class="fin-input fin-select" id="fi-${field.id}">${optionsHTML}</select>
+        </div>
+      `;
+      els.finInputGrid.appendChild(wrapper);
+      wrapper.querySelector('select').addEventListener('change', (e) => {
+        window[`fin_${field.id}`] = e.target.value;
+        calculateFin();
+      });
+      return;
+    }
+    
+    const minAttr = field.min !== undefined ? `min="${field.min}"` : '';
+    wrapper.innerHTML = `
+      <label class="fin-input-label">${labelText}</label>
+      <div class="fin-input-group">
+        ${pre}
+        <input type="number" class="fin-input" id="fi-${field.id}" value="${existingVal}" step="any" ${minAttr}>
+        ${suf}
+      </div>
+    `;
+    els.finInputGrid.appendChild(wrapper);
+    
+    wrapper.querySelector('input').addEventListener('input', (e) => {
+      // Enforce minimum for PPF years
+      if (field.min !== undefined && parseFloat(e.target.value) < field.min) {
+        e.target.value = field.min;
+        window[`fin_${field.id}`] = field.min;
+      } else {
+        window[`fin_${field.id}`] = e.target.value;
+      }
+      calculateFin();
+    });
+  });
+}
+
+function getFinVal(id) {
+  const el = document.getElementById(`fi-${id}`);
+  if (!el) return 0;
+  return parseFloat(el.value) || 0;
+}
+
+function calculateFin() {
+  if (state.mode !== 'fin') return;
+  const cat = state.finCategory;
+  const S = STRINGS[state.lang];
+  
+  let totalInvestment = 0;
+  let maturityValue = 0;
+  let totalInterest = 0;
+  let schedule = [];
+  
+  const fmtStr = (num) => '₹ ' + (Math.round(num * 10) / 10).toLocaleString('en-IN');
+  let summaryHTML = '';
+
+  if (cat === 'sip') {
+    const P = getFinVal('monthlySip');
+    const r = getFinVal('rate') / 100 / 12;
+    const n = getFinVal('years') * 12;
+    
+    totalInvestment = P * n;
+    maturityValue = r === 0 ? totalInvestment : P * (((Math.pow(1 + r, n) - 1) / r) * (1 + r));
+    totalInterest = Math.max(0, maturityValue - totalInvestment);
+    
+    let bal = 0;
+    for(let i=1; i<=n; i++) {
+        const intEarned = bal * r;
+        bal += P + intEarned;
+        schedule.push({ p: i, deposited: P * i, interestEarned: Math.round(intEarned), balance: Math.round(bal) });
+    }
+  } 
+  else if (cat === 'fd') {
+    const P = getFinVal('principal');
+    const r = getFinVal('rate') / 100;
+    const t = getFinVal('years');
+    const nForm = 4; // quarterly compounding for FD
+    
+    totalInvestment = P;
+    maturityValue = P * Math.pow(1 + (r / nForm), nForm * t);
+    totalInterest = Math.max(0, maturityValue - P);
+    
+    let bal = P;
+    for(let i=1; i<=Math.floor(t * 12); i++) {
+        const monthlyInt = (bal * (Math.pow(1 + r/nForm, nForm/12) - 1));
+        bal += monthlyInt;
+        schedule.push({ p: i, interestEarned: Math.round(monthlyInt), balance: Math.round(bal) });
+    }
+  }
+  else if (cat === 'nsc') {
+    // NSC: fixed 5-year lock-in, annual compounding, user selects number of repetitions
+    const P = getFinVal('principal');
+    const r = getFinVal('rate') / 100;
+    const repeats = Math.max(1, Math.round(getFinVal('nscRepeat') || 1));
+    const LOCK = 5; // fixed 5-year lock-in per period
+    
+    totalInvestment = P;
+    let bal = P;
+    let globalYear = 0;
+    
+    for (let rep = 1; rep <= repeats; rep++) {
+      const repStartBal = bal;
+      for (let y = 1; y <= LOCK; y++) {
+        globalYear++;
+        const intEarned = bal * r;
+        bal += intEarned;
+        schedule.push({
+          p: globalYear,
+          rep,
+          repYear: y,
+          interestEarned: Math.round(intEarned),
+          balance: Math.round(bal)
+        });
+      }
+      // After first repeat, reinvest the maturity into next period (compounding across repeats)
+      // bal already updated
+    }
+    maturityValue = bal;
+    totalInterest = Math.max(0, maturityValue - P);
+  }
+  else if (cat === 'rd') {
+    const P = getFinVal('monthlyDeposit');
+    const r = getFinVal('rate') / 100;
+    const n = getFinVal('years') * 12;
+    totalInvestment = P * n;
+    let bal = 0;
+    for(let i=1; i<=n; i++) {
+        const effInt = Math.pow(1 + r/4, 4/12) - 1;
+        const monthlyInt = bal * effInt;
+        bal += P + monthlyInt;
+        schedule.push({ p: i, deposited: P * i, interestEarned: Math.round(monthlyInt), balance: Math.round(bal) });
+    }
+    maturityValue = bal;
+    totalInterest = Math.max(0, maturityValue - totalInvestment);
+  }
+  else if (cat === 'ppf') {
+    const P = getFinVal('yearlyDeposit');
+    const r = getFinVal('rate') / 100;
+    const y = Math.max(15, getFinVal('years')); // minimum 15 years
+    
+    totalInvestment = P * y;
+    let bal = 0;
+    for(let i=1; i<=y; i++) {
+        bal += P;
+        const intEarned = bal * r;
+        bal += intEarned;
+        schedule.push({ p: i, deposited: P * i, interestEarned: Math.round(intEarned), balance: Math.round(bal) });
+    }
+    maturityValue = bal;
+    totalInterest = Math.max(0, maturityValue - totalInvestment);
+  }
+  else if (cat === 'loan') {
+    const P_input = getFinVal('principal');
+    const dp = getFinVal('downpayment');
+    const exVal = getFinVal('exchangeVal');
+    const r = getFinVal('rate') / 12 / 100;
+    const n = getFinVal('years') * 12;
+    const procFeePct = getFinVal('procFee');
+    const prepayAmt = getFinVal('prepayAmt');
+    const prepayMode = (document.getElementById('fi-prepayMode') || {}).value || 'tenure';
+    
+    const P = Math.max(0, P_input - dp - exVal);
+    const fees = P * (procFeePct / 100);
+    
+    let emi = 0;
+    if (r === 0) {
+       emi = n > 0 ? P / n : 0;
+    } else {
+       emi = P * r * (Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
+    }
+    if(isNaN(emi) || emi<0 || !isFinite(emi)) emi = 0;
+    
+    let displayEmi = emi;
+    let displayN = n;
+    let prepayInfo = '';
+    
+    // Prepayment logic
+    if (prepayAmt > 0 && prepayAmt < P) {
+      const remainingP = P - prepayAmt;
+      if (prepayMode === 'tenure') {
+        // Reduce tenure: keep same EMI, calculate new months
+        if (r === 0) {
+          displayN = Math.ceil(remainingP / emi);
+        } else {
+          displayN = Math.ceil(-Math.log(1 - (remainingP * r / emi)) / Math.log(1 + r));
+        }
+        if (!isFinite(displayN) || isNaN(displayN) || displayN < 0) displayN = 0;
+        prepayInfo = `reduceTenure:${displayN}`;
+      } else {
+        // Reduce EMI: keep same tenure remaining, recalculate EMI
+        if (r === 0) {
+          displayEmi = n > 0 ? remainingP / n : 0;
+        } else {
+          displayEmi = remainingP * r * (Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1));
+        }
+        if(isNaN(displayEmi) || displayEmi<0 || !isFinite(displayEmi)) displayEmi = 0;
+        prepayInfo = `reduceEmi:${displayEmi}`;
+      }
+    }
+    
+    const totalPayment = displayEmi * displayN;
+    totalInterest = Math.max(0, totalPayment - P);
+    
+    // Prepayment summary extras
+    let prepayExtraHTML = '';
+    if (prepayAmt > 0) {
+      if (prepayMode === 'tenure') {
+        const origMonths = n;
+        const newMonths = displayN;
+        const savedMonths = origMonths - newMonths;
+        prepayExtraHTML = `
+          <div class="fin-summary-card prepay-card"><div class="fsc-label">${S.newTenure || 'New Tenure'}</div><div class="fsc-value">${newMonths} ${S.month || 'mo'} (${(newMonths/12).toFixed(1)} yr)</div></div>
+          <div class="fin-summary-card prepay-card"><div class="fsc-label">${S.tenureSaved || 'Tenure Saved'}</div><div class="fsc-value">${savedMonths} ${S.month || 'mo'}</div></div>
+        `;
+      } else {
+        prepayExtraHTML = `
+          <div class="fin-summary-card prepay-card highlight"><div class="fsc-label">${S.newEmi || 'New EMI'}</div><div class="fsc-value">${fmtStr(displayEmi)}</div></div>
+          <div class="fin-summary-card prepay-card"><div class="fsc-label">${S.emiSaved || 'EMI Saved'}</div><div class="fsc-value">${fmtStr(emi - displayEmi)}</div></div>
+        `;
+      }
+    }
+    
+    summaryHTML = `
+      <div class="fin-summary-card"><div class="fsc-label">${S.loanAmount}</div><div class="fsc-value">${fmtStr(P)}</div></div>
+      <div class="fin-summary-card highlight"><div class="fsc-label">${S.emi}</div><div class="fsc-value">${fmtStr(emi)}</div></div>
+      <div class="fin-summary-card"><div class="fsc-label">${S.totalInterest}</div><div class="fsc-value">${fmtStr(totalInterest)}</div></div>
+      <div class="fin-summary-card"><div class="fsc-label">${S.totalPayment}</div><div class="fsc-value">${fmtStr(displayEmi * displayN + fees)}</div></div>
+      ${prepayExtraHTML}
+    `;
+    
+    // Build schedule based on effective values after prepayment
+    let bal = P - prepayAmt;
+    if (bal < 0) bal = 0;
+    const scheduleMonths = prepayMode === 'tenure' ? displayN : n;
+    for(let i=1; i<=scheduleMonths; i++) {
+       const intPart = bal * r;
+       let principalPart = displayEmi - intPart;
+       if (i === scheduleMonths || principalPart > bal) principalPart = bal;
+       bal -= principalPart;
+       if (bal < 0) bal = 0;
+       schedule.push({ p: i, emi: Math.round(displayEmi), principle: Math.round(principalPart), interestEarned: Math.round(intPart), balance: Math.round(bal) });
+    }
+  }
+
+  // Generic Investment Summary
+  if (cat !== 'loan') {
+      summaryHTML = `
+      <div class="fin-summary-card"><div class="fsc-label">${S.totalInvest}</div><div class="fsc-value">${fmtStr(totalInvestment)}</div></div>
+      <div class="fin-summary-card"><div class="fsc-label">${S.estReturns}</div><div class="fsc-value">${fmtStr(totalInterest)}</div></div>
+      <div class="fin-summary-card highlight"><div class="fsc-label">${S.maturityValue}</div><div class="fsc-value">${fmtStr(maturityValue)}</div></div>
+    `;
+  }
+  
+  els.finSummaryGrid.innerHTML = summaryHTML;
+  renderFinTable(cat, schedule, S);
+}
+
+function renderFinTable(cat, schedule, S) {
+  const thead = els.finTableHead;
+  const tbody = els.finTableBody;
+  
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+  if (schedule.length === 0) return;
+  
+  const periodLabel = (cat === 'ppf' || cat === 'nsc') ? S.year : S.month;
+  
+  let headHTML = '<tr>';
+  headHTML += `<th>${periodLabel}</th>`;
+  
+  if (cat === 'nsc') {
+    headHTML += `<th>${S.nscCycle || 'Cycle'}</th><th>${S.interestList}</th><th>${S.balance}</th>`;
+  } else if (cat === 'loan') {
+    headHTML += `<th>${S.emi}</th><th>${S.principal}</th><th>${S.interestList}</th><th>${S.balance}</th>`;
+  } else {
+    if(schedule[0].deposited !== undefined) headHTML += `<th>${S.deposit}</th>`;
+    headHTML += `<th>${S.interestList}</th><th>${S.balance}</th>`;
+  }
+  headHTML += '</tr>';
+  thead.innerHTML = headHTML;
+  
+  const fmt = (n) => '₹ ' + Number(n).toLocaleString('en-IN');
+  
+  const rows = schedule.map(row => {
+    let tr = `<tr><td>${row.p}</td>`;
+    if (cat === 'nsc') {
+      tr += `<td>${S.repeat || 'Repeat'} ${row.rep} · Yr ${row.repYear}</td><td>${fmt(row.interestEarned)}</td><td>${fmt(row.balance)}</td>`;
+    } else if (cat === 'loan') {
+      tr += `<td>${fmt(row.emi)}</td><td>${fmt(row.principle)}</td><td>${fmt(row.interestEarned)}</td><td>${fmt(row.balance)}</td>`;
+    } else {
+      if(row.deposited !== undefined) tr += `<td>${fmt(row.deposited)}</td>`;
+      tr += `<td>${fmt(row.interestEarned)}</td><td>${fmt(row.balance)}</td>`;
+    }
+    tr += '</tr>';
+    return tr;
+  });
+  
+  tbody.innerHTML = rows.join('');
+}
 
 // ──────────────────────────────────────────────
 //  17. INIT

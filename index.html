@@ -32,6 +32,9 @@
         </div>
       </div>
       <div class="header-controls">
+        <a href="pdf_merger.html" class="nav-pdf-link" title="Open PDF Tools" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.35); color: #8b5cf6; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s; margin-right: 8px;" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
+          <span>📄</span> PDF Toolkit
+        </a>
         <button class="lang-toggle" id="lang-toggle" title="Toggle Language">
           <span class="lang-en">🇮🇳 ગુજરાતી</span>
           <span class="lang-gu hidden">🌐 English</span>
@@ -53,8 +56,22 @@
     </p>
   </section>
 
+  <!-- Mode Switcher -->
+  <div class="mode-switcher-wrapper">
+    <div class="mode-switcher" id="mode-switcher">
+      <button class="mode-btn active" data-mode="unit" id="mode-unit-btn">
+        <span class="mode-icon">⚖️</span>
+        <span class="mode-label" id="mode-unit-label">Unit Calculator</span>
+      </button>
+      <button class="mode-btn" data-mode="fin" id="mode-fin-btn">
+        <span class="mode-icon">💰</span>
+        <span class="mode-label" id="mode-fin-label">Financial Calculator</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Category Tabs -->
-  <div class="tabs-wrapper">
+  <div class="tabs-wrapper" id="unit-tabs-wrapper">
     <div class="tabs" id="tabs-container">
       <button class="tab active" data-category="length" id="tab-length">
         <span class="tab-icon">📏</span>
@@ -91,8 +108,41 @@
     </div>
   </div>
 
+  <!-- Financial Tabs -->
+  <div class="tabs-wrapper hidden" id="fin-tabs-wrapper">
+    <div class="tabs" id="fin-tabs-container">
+      <button class="tab active" data-fincat="sip" id="fintab-sip">
+        <span class="tab-icon">📈</span>
+        <span class="tab-label" id="fl-sip">SIP / MF</span>
+      </button>
+      <button class="tab" data-fincat="fd" id="fintab-fd">
+        <span class="tab-icon">🏦</span>
+        <span class="tab-label" id="fl-fd">FD</span>
+      </button>
+      <button class="tab" data-fincat="rd" id="fintab-rd">
+        <span class="tab-icon">🔁</span>
+        <span class="tab-label" id="fl-rd">RD</span>
+      </button>
+      <button class="tab" data-fincat="ppf" id="fintab-ppf">
+        <span class="tab-icon">🛡️</span>
+        <span class="tab-label" id="fl-ppf">PPF</span>
+      </button>
+      <button class="tab" data-fincat="nsc" id="fintab-nsc">
+        <span class="tab-icon">📜</span>
+        <span class="tab-label" id="fl-nsc">NSC</span>
+      </button>
+      <button class="tab" data-fincat="loan" id="fintab-loan">
+        <span class="tab-icon">📉</span>
+        <span class="tab-label" id="fl-loan">Loan / EMI</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Main Calculator -->
   <main class="main">
+    
+    <!-- UNIT CALCULATOR SECTION -->
+    <div id="unit-calc-section">
     <div class="calculator-card" id="calculator-card">
 
       <!-- Feet-inch special badge (only for length) -->
@@ -246,6 +296,47 @@
         </ul>
       </div>
     </div>
+    </div> <!-- Close unit-calc-section -->
+
+    <!-- FINANCIAL CALCULATOR SECTION -->
+    <div id="fin-calc-section" class="hidden">
+      <div class="calculator-card fin-card">
+        
+        <div class="fin-layout">
+          <!-- Inputs -->
+          <div class="fin-input-panel">
+            <h3 class="fin-section-title" id="fin-inputs-title">Parameters</h3>
+            <div class="fin-input-grid" id="fin-input-grid">
+              <!-- Inputs injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="fin-summary-panel">
+            <h3 class="fin-section-title" id="fin-summary-title">Summary</h3>
+            <div class="fin-summary-grid" id="fin-summary">
+              <!-- Summary cards injected dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule / Table -->
+        <div class="fin-table-container">
+          <div class="fin-table-header">
+            <h3 class="fin-section-title" id="fin-table-title">Transaction Details</h3>
+          </div>
+          <div class="fin-table-scroll">
+            <table class="fin-table" id="fin-table">
+              <!-- Table injected dynamically -->
+              <thead id="fin-table-head"></thead>
+              <tbody id="fin-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
 
   <!-- Footer -->
