@@ -67,6 +67,10 @@
         <span class="mode-icon">💰</span>
         <span class="mode-label" id="mode-fin-label">Financial Calculator</span>
       </button>
+      <button class="mode-btn" data-mode="bill" id="mode-bill-btn">
+        <span class="mode-icon">🧾</span>
+        <span class="mode-label" id="mode-bill-label">Bill Calculator</span>
+      </button>
     </div>
   </div>
 
@@ -134,6 +138,16 @@
       <button class="tab" data-fincat="loan" id="fintab-loan">
         <span class="tab-icon">📉</span>
         <span class="tab-label" id="fl-loan">Loan / EMI</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Bill Tabs -->
+  <div class="tabs-wrapper hidden" id="bill-tabs-wrapper">
+    <div class="tabs" id="bill-tabs-container">
+      <button class="tab active" data-billcat="electricity" id="billtab-electricity">
+        <span class="tab-icon">⚡</span>
+        <span class="tab-label" id="bl-electricity">Electricity</span>
       </button>
     </div>
   </div>
@@ -334,6 +348,39 @@
           </div>
         </div>
 
+      </div>
+    </div>
+    
+    <!-- BILL CALCULATOR SECTION -->
+    <div id="bill-calc-section" class="hidden">
+      <div class="calculator-card fin-card">
+        <div class="fin-layout">
+          <!-- Inputs -->
+          <div class="fin-input-panel">
+            <h3 class="fin-section-title" id="bill-inputs-title">Parameters</h3>
+            <div class="fin-input-grid" id="bill-input-grid">
+              <!-- Inputs injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="fin-summary-panel">
+            <h3 class="fin-section-title" id="bill-summary-title">Summary</h3>
+            <div class="fin-summary-grid" id="bill-summary">
+              <!-- Summary cards injected dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Explanation / Breakdown -->
+        <div class="fin-table-container">
+          <div class="fin-table-header">
+            <h3 class="fin-section-title" id="bill-explain-title">Calculation Breakdown</h3>
+          </div>
+          <div class="bill-explanation" id="bill-explanation" style="padding: 1.5rem; color: var(--text); font-size: 0.9rem; line-height: 1.6;">
+            <!-- Explanation injected dynamically -->
+          </div>
+        </div>
       </div>
     </div>
 
