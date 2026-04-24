@@ -67,10 +67,6 @@
         <span class="mode-icon">💰</span>
         <span class="mode-label" id="mode-fin-label">Financial Calculator</span>
       </button>
-      <button class="mode-btn" data-mode="bill" id="mode-bill-btn">
-        <span class="mode-icon">🧾</span>
-        <span class="mode-label" id="mode-bill-label">Bill Calculator</span>
-      </button>
     </div>
   </div>
 
@@ -142,15 +138,7 @@
     </div>
   </div>
 
-  <!-- Bill Tabs -->
-  <div class="tabs-wrapper hidden" id="bill-tabs-wrapper">
-    <div class="tabs" id="bill-tabs-container">
-      <button class="tab active" data-billcat="electricity" id="billtab-electricity">
-        <span class="tab-icon">⚡</span>
-        <span class="tab-label" id="bl-electricity">Electricity</span>
-      </button>
-    </div>
-  </div>
+
 
   <!-- Main Calculator -->
   <main class="main">
@@ -254,11 +242,12 @@
             <!-- ticks generated via JS -->
           </div>
           <div class="hc-graph-area" id="hc-graph-area">
+            <div class="hc-compare-line" id="hc-compare-line"></div>
             <!-- Person A SVG -->
             <div class="hc-person-wrapper" id="hc-person-a-wrapper">
               <div class="hc-person-val" id="hc-val-a">--</div>
               <!-- human SVG -->
-              <svg viewBox="0 0 100 300" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-a">
+              <svg viewBox="0 10 100 280" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-a">
                 <path
                   d="M50 10 C60 10 65 15 65 25 C65 35 60 40 50 40 C40 40 35 35 35 25 C35 15 40 10 50 10 Z 
                                  M25 50 C20 50 20 60 25 60 L35 60 L35 280 C35 290 45 290 45 280 L45 160 L55 160 L55 280 C55 290 65 290 65 280 L65 60 L75 60 C80 60 80 50 75 50 Z" />
@@ -269,7 +258,7 @@
             <div class="hc-person-wrapper" id="hc-person-b-wrapper">
               <div class="hc-person-val" id="hc-val-b">--</div>
               <!-- human SVG -->
-              <svg viewBox="0 0 100 300" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-b">
+              <svg viewBox="0 10 100 280" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-b">
                 <path
                   d="M50 10 C60 10 65 15 65 25 C65 35 60 40 50 40 C40 40 35 35 35 25 C35 15 40 10 50 10 Z 
                                  M25 50 C20 50 20 60 25 60 L35 60 L35 280 C35 290 45 290 45 280 L45 160 L55 160 L55 280 C55 290 65 290 65 280 L65 60 L75 60 C80 60 80 50 75 50 Z" />
@@ -351,38 +340,7 @@
       </div>
     </div>
     
-    <!-- BILL CALCULATOR SECTION -->
-    <div id="bill-calc-section" class="hidden">
-      <div class="calculator-card fin-card">
-        <div class="fin-layout">
-          <!-- Inputs -->
-          <div class="fin-input-panel">
-            <h3 class="fin-section-title" id="bill-inputs-title">Parameters</h3>
-            <div class="fin-input-grid" id="bill-input-grid">
-              <!-- Inputs injected dynamically -->
-            </div>
-          </div>
 
-          <!-- Summary -->
-          <div class="fin-summary-panel">
-            <h3 class="fin-section-title" id="bill-summary-title">Summary</h3>
-            <div class="fin-summary-grid" id="bill-summary">
-              <!-- Summary cards injected dynamically -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Explanation / Breakdown -->
-        <div class="fin-table-container">
-          <div class="fin-table-header">
-            <h3 class="fin-section-title" id="bill-explain-title">Calculation Breakdown</h3>
-          </div>
-          <div class="bill-explanation" id="bill-explanation" style="padding: 1.5rem; color: var(--text); font-size: 0.9rem; line-height: 1.6;">
-            <!-- Explanation injected dynamically -->
-          </div>
-        </div>
-      </div>
-    </div>
 
   </main>
 
