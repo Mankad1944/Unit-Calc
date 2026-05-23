@@ -24,21 +24,28 @@
   <!-- Header -->
   <header class="header">
     <div class="header-inner">
-      <div class="logo">
+      <a href="index.html" class="logo" style="text-decoration: none;">
         <div class="logo-icon">⚖️</div>
         <div class="logo-text">
           <span class="logo-en" id="logo-en">Unit Calc</span>
           <span class="logo-gu" id="logo-gu">એકમ કેલ્ક્યુલેટર</span>
         </div>
-      </div>
+      </a>
       <div class="header-controls">
         <a href="pdf_merger.html" class="nav-pdf-link" title="Open PDF Tools" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.35); color: #8b5cf6; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s; margin-right: 8px;" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
           <span>📄</span> PDF Toolkit
+        </a>
+        <a href="image_editor.html" class="nav-img-link" title="Image to PDF Editor" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #f59e0b; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s; margin-right: 8px;" onmouseover="this.style.background='rgba(245, 158, 11, 0.25)'" onmouseout="this.style.background='rgba(245, 158, 11, 0.15)'">
+          <span>🖼️</span> Image Editor
+        </a>
+        <a href="compiler.html" class="nav-compiler-link" title="Open Online Compiler" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #10b981; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s; margin-right: 8px;" onmouseover="this.style.background='rgba(16, 185, 129, 0.25)'" onmouseout="this.style.background='rgba(16, 185, 129, 0.15)'">
+          <span>💻</span> Compiler
         </a>
         <button class="lang-toggle" id="lang-toggle" title="Toggle Language">
           <span class="lang-en">🇮🇳 ગુજરાતી</span>
           <span class="lang-gu hidden">🌐 English</span>
         </button>
+        <button class="stats-toggle" id="stats-toggle" title="View Visitor Stats" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 4px; border-radius: 50%; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">📊</button>
         <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">🌙</button>
       </div>
     </div>
@@ -66,6 +73,10 @@
       <button class="mode-btn" data-mode="fin" id="mode-fin-btn">
         <span class="mode-icon">💰</span>
         <span class="mode-label" id="mode-fin-label">Financial Calculator</span>
+      </button>
+      <button class="mode-btn" data-mode="basic" id="mode-basic-btn">
+        <span class="mode-icon">🔢</span>
+        <span class="mode-label" id="mode-basic-label">Basic Calculator</span>
       </button>
     </div>
   </div>
@@ -340,9 +351,86 @@
       </div>
     </div>
     
+    <!-- BASIC CALCULATOR SECTION -->
+    <div id="basic-calc-section" class="hidden">
+      <div class="calculator-card basic-card">
+        <div class="basic-calc-container">
+          <div class="basic-calc-display-wrapper">
+            <div class="basic-calc-history" id="basic-history"></div>
+            <div class="basic-calc-screen" id="basic-screen">0</div>
+          </div>
+          <div class="basic-calc-grid">
+            <button class="calc-btn clear" data-val="C">C</button>
+            <button class="calc-btn op" data-val="back">⌫</button>
+            <button class="calc-btn op" data-val="%">%</button>
+            <button class="calc-btn op" data-val="/">÷</button>
+
+            <button class="calc-btn" data-val="7">7</button>
+            <button class="calc-btn" data-val="8">8</button>
+            <button class="calc-btn" data-val="9">9</button>
+            <button class="calc-btn op" data-val="*">×</button>
+
+            <button class="calc-btn" data-val="4">4</button>
+            <button class="calc-btn" data-val="5">5</button>
+            <button class="calc-btn" data-val="6">6</button>
+            <button class="calc-btn op" data-val="-">−</button>
+
+            <button class="calc-btn" data-val="1">1</button>
+            <button class="calc-btn" data-val="2">2</button>
+            <button class="calc-btn" data-val="3">3</button>
+            <button class="calc-btn op" data-val="+">+</button>
+
+            <button class="calc-btn double" data-val="0">0</button>
+            <button class="calc-btn" data-val=".">.</button>
+            <button class="calc-btn equals" data-val="=">=</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <div class="info-icon">💡</div>
+        <div class="info-content">
+          <div class="info-title" id="basic-info-title">Basic Calculator Tips</div>
+          <ul class="info-list" id="basic-info-list">
+            <li id="btip1">Supports keyboard input (0-9, +, -, *, /, Enter, Backspace)</li>
+            <li id="btip2">Use C to clear the current calculation</li>
+            <li id="btip3">Use % for percentage calculations</li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
 
   </main>
+
+  <!-- Visitor Stats Modal -->
+  <div class="stats-modal-overlay hidden" id="stats-modal-overlay">
+    <div class="stats-modal">
+      <div class="stats-modal-header">
+        <h3 id="stats-modal-title">Website Visitor Statistics</h3>
+        <button class="stats-close-btn" id="stats-close-btn">&times;</button>
+      </div>
+      <div class="stats-modal-body">
+        <div class="stats-summary">
+          <div class="stat-box">
+            <div class="stat-label">Total Visits</div>
+            <div class="stat-value" id="stat-total-visits">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Unique Devices</div>
+            <div class="stat-value" id="stat-unique-devices">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Today</div>
+            <div class="stat-value" id="stat-today-visits">0</div>
+          </div>
+        </div>
+        <div class="stats-graph-container">
+          <canvas id="visitorChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="footer">
@@ -352,6 +440,33 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- Premium Auth Overlay -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-container">
+      <div class="auth-box">
+        <h2 id="auth-title">Welcome Back</h2>
+        <p id="auth-subtitle">Login to access the Unit Calculator</p>
+        
+        <form id="auth-form">
+          <div class="input-group">
+            <input type="text" id="auth-username" required placeholder="Username" autocomplete="off" />
+          </div>
+          <div class="input-group">
+            <input type="password" id="auth-password" required placeholder="Password" />
+          </div>
+          <button type="submit" class="auth-btn" id="auth-submit-btn">Login</button>
+        </form>
+        
+        <p class="auth-switch">
+          <span id="auth-switch-text">Don't have an account?</span>
+          <a href="#" id="auth-switch-link">Register here</a>
+        </p>
+        <p id="auth-error" class="auth-error hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
 </body>
 

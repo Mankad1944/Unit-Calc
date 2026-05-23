@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Online Compiler - C, C++, Java, Python. Premium coding environment." />
+  <title>Online Compiler | Unit Calc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    :root {
+      --editor-bg: #1e1e1e;
+      --panel-bg: rgba(255, 255, 255, 0.03);
+    }
+
+    body.light {
+      --editor-bg: #ffffff;
+      --panel-bg: rgba(0, 0, 0, 0.03);
+    }
+
+    .compiler-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 160px);
+      gap: 1.5rem;
+    }
+
+    .compiler-main {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 1.5rem;
+      flex-grow: 1;
+      min-height: 0;
+    }
+
+    @media (max-width: 992px) {
+      .compiler-main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 250px;
+      }
+      .compiler-container {
+        height: auto;
+        min-height: calc(100vh - 160px);
+      }
+    }
+
+    .editor-card {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
+      border: 1px solid var(--border);
+      background: var(--editor-bg);
+    }
+
+    .editor-header {
+      padding: 0.75rem 1.25rem;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .editor-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .lang-select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .run-btn {
+      background: var(--accent-grd);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .run-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+    }
+
+    .run-btn:active {
+      transform: scale(0.95);
+    }
+
+    .run-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #monaco-editor-container {
+      flex-grow: 1;
+      width: 100%;
+      min-height: 400px;
+    }
+
+    .output-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .output-header {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .output-content {
+      padding: 1.25rem;
+      flex-grow: 1;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.9rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      background: rgba(0, 0, 0, 0.2);
+      color: #d1d5db;
+    }
+
+    body.light .output-content {
+      background: rgba(0, 0, 0, 0.05);
+      color: #1f2937;
+    }
+
+    .status-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .status-idle { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
+    .status-running { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .status-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .status-error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    .loader {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      display: inline-block;
+      animation: rotation 1s linear infinite;
+    }
+
+    @keyframes rotation {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .clear-output {
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .clear-output:hover {
+      opacity: 1;
+    }
+
+    /* Monaco overwrite */
+    .monaco-editor, .overflow-guard {
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo" style="text-decoration: none;">
+        <div class="logo-icon">⚖️</div>
+        <div class="logo-text">
+          <span class="logo-en">Unit Calc</span>
+          <span class="logo-gu">એકમ કેલ્ક્યુલેટર</span>
+        </div>
+      </a>
+      <div class="header-controls">
+        <a href="pdf_merger.html" class="nav-pdf-link" title="Open PDF Tools" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.35); color: #8b5cf6; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s; margin-right: 8px;" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
+          <span>📄</span> PDF Toolkit
+        </a>
+        <a href="compiler.html" class="nav-compiler-link" title="Open Online Compiler" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(16, 185, 129, 0.25); border: 1px solid rgba(16, 185, 129, 0.5); color: #10b981; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s; margin-right: 8px;">
+          <span>💻</span> Compiler
+        </a>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="hero" style="padding-top: 1rem; padding-bottom: 2rem;">
+      <div class="hero-badge">Multi-Language Code Runner</div>
+      <h1 class="hero-title" style="font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 0.5rem;">
+        Online <span class="gradient-text">Compiler</span>
+      </h1>
+      <p class="hero-subtitle">Write, compile and run C, C++, Java and Python in your browser.</p>
+    </section>
+
+    <div class="compiler-container">
+      <div class="compiler-main">
+        <!-- Editor Section -->
+        <div class="calculator-card editor-card">
+          <div class="editor-header">
+            <div class="editor-controls">
+              <select class="lang-select" id="lang-select">
+                <option value="python">Python 3</option>
+                <option value="c">C (GCC)</option>
+                <option value="cpp">C++ (G++)</option>
+                <option value="java">Java (OpenJDK)</option>
+              </select>
+              <button class="lang-toggle" id="convert-btn" title="Convert code to another language" style="background: rgba(6, 182, 212, 0.15); color: var(--accent2); border-color: rgba(6, 182, 212, 0.35); display: flex; align-items: center; gap: 5px;">
+                <span>🔄</span> Convert
+              </button>
+            </div>
+            <button class="run-btn" id="run-btn">
+              <span id="run-icon">▶</span>
+              <span id="run-text">Run Code</span>
+            </button>
+          </div>
+          <div id="monaco-editor-container"></div>
+        </div>
+
+        <!-- Output Section -->
+        <div class="output-card">
+          <div class="output-header">
+            <span>Console Output</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="status-badge status-idle" id="status-badge">Idle</span>
+              <button id="copy-output-btn" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 4px;" title="Copy Output">
+                <span>📋</span> Copy
+              </button>
+              <span class="clear-output" id="clear-output" title="Clear Console">🧹</span>
+            </div>
+          </div>
+          <div class="output-content" id="output-content">Click 'Run Code' to execute your program...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+      <div class="info-icon">💡</div>
+      <div class="info-content">
+        <div class="info-title">Compiler Tips</div>
+        <ul class="info-list">
+          <li>Use <strong>Ctrl + Enter</strong> to run code quickly.</li>
+          <li>For Java, name your class <code>Main</code>.</li>
+          <li>Execution is powered by Piston API.</li>
+          <li>Standard input (stdin) is currently simulated.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Premium Compiler Experience | Part of Unit Calc Ecosystem</p>
+  </footer>
+
+  <!-- Monaco Editor Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+  <script>
+    // Theme Management
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+
+    function updateTheme(isLight) {
+      if (isLight) {
+        body.classList.add('light');
+        themeToggle.textContent = '☀️';
+        if (window.monacoEditor) {
+          monaco.editor.setTheme('vs');
+        }
+      } else {
+        body.classList.remove('light');
+        themeToggle.textContent = '🌙';
+        if (window.monacoEditor) {
+          monaco.editor.setTheme('vs-dark');
+        }
+      }
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      updateTheme(!body.classList.contains('light'));
+    });
+
+    if (localStorage.getItem('theme') === 'light') {
+      updateTheme(true);
+    }
+
+    // Monaco Editor Initialization
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } });
+    
+    const codeTemplates = {
+      python: 'print("Hello, World!")\n\n# Try writing some logic here\nfor i in range(5):\n    print(f"Number: {i}")',
+      c: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
+      cpp: '#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}',
+      java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}'
+    };
+
+    const langModes = {
+      python: 'python',
+      c: 'c',
+      cpp: 'cpp',
+      java: 'java'
+    };
+
+    // Judge0 Language IDs
+    const judge0Langs = {
+      python: 71, // Python (3.8.1)
+      c: 50,      // C (GCC 9.2.0)
+      cpp: 54,    // C++ (GCC 9.2.0)
+      java: 62    // Java (OpenJDK 13.0.1)
+    };
+
+    require(['vs/editor/editor.main'], function() {
+      window.monacoEditor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+        value: codeTemplates.python,
+        language: 'python',
+        theme: body.classList.contains('light') ? 'vs' : 'vs-dark',
+        automaticLayout: true,
+        fontSize: 14,
+        fontFamily: 'Fira Code, monospace',
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        padding: { top: 16, bottom: 16 },
+        roundedSelection: true,
+        cursorSmoothCaretAnimation: "on"
+      });
+
+      // Handle Language Change
+      document.getElementById('lang-select').addEventListener('change', (e) => {
+        const newLang = e.target.value;
+        const oldLang = window.currentLang || 'python';
+        const sourceCode = monacoEditor.getValue().trim();
+        
+        // If there's non-template code, ask to convert
+        const isDefault = Object.values(codeTemplates).includes(sourceCode);
+        
+        if (!isDefault && sourceCode.length > 0) {
+          if (confirm(`Do you want to convert your current ${oldLang} code to ${newLang}?\n(Click 'Cancel' to load the default ${newLang} template)`)) {
+            const converted = convertCode(sourceCode, oldLang, newLang);
+            monacoEditor.setValue(converted);
+          } else {
+            monacoEditor.setValue(codeTemplates[newLang]);
+          }
+        } else {
+          monacoEditor.setValue(codeTemplates[newLang]);
+        }
+
+        const model = monacoEditor.getModel();
+        monaco.editor.setModelLanguage(model, langModes[newLang]);
+        window.currentLang = newLang;
+      });
+
+      // Track current lang for conversion logic
+      window.currentLang = 'python';
+
+      // Keyboard Shortcut
+      monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function() {
+        runCode();
+      });
+    });
+
+    // Execution Logic
+    const runBtn = document.getElementById('run-btn');
+    const runIcon = document.getElementById('run-icon');
+    const runText = document.getElementById('run-text');
+    const outputContent = document.getElementById('output-content');
+    const statusBadge = document.getElementById('status-badge');
+    const clearBtn = document.getElementById('clear-output');
+    const copyOutputBtn = document.getElementById('copy-output-btn');
+
+    copyOutputBtn.addEventListener('click', () => {
+      const text = outputContent.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Output copied to clipboard!");
+      });
+    });
+
+    clearBtn.addEventListener('click', () => {
+      outputContent.textContent = 'Console cleared...';
+      statusBadge.className = 'status-badge status-idle';
+      statusBadge.textContent = 'Idle';
+    });
+
+    async function runCode() {
+      const langKey = document.getElementById('lang-select').value;
+      const code = window.monacoEditor.getValue();
+      const languageId = judge0Langs[langKey];
+
+      // UI State: Running
+      runBtn.disabled = true;
+      runIcon.innerHTML = '<span class="loader"></span>';
+      runText.textContent = 'Running...';
+      statusBadge.className = 'status-badge status-running';
+      statusBadge.textContent = 'Running';
+      outputContent.textContent = 'Compiling and executing...\n';
+
+      try {
+        // Using Judge0 CE Public Demo Server
+        const response = await fetch('https://ce.judge0.com/submissions?base64_encoded=false&wait=true', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_code: code,
+            language_id: languageId,
+            stdin: ""
+          })
+        });
+
+        const data = await response.json();
+        
+        let output = "";
+        if (data.stdout) output += data.stdout;
+        if (data.stderr) output += data.stderr;
+        if (data.compile_output) output += data.compile_output;
+        
+        if (!output && data.status.id === 3) {
+          output = "Program executed successfully with no output.";
+        } else if (!output) {
+          output = "Execution Error: " + (data.status.description || "Unknown error");
+        }
+
+        outputContent.textContent = output;
+
+        // Status Handling
+        if (data.status.id === 3) {
+          statusBadge.className = 'status-badge status-success';
+          statusBadge.textContent = 'Success';
+        } else {
+          statusBadge.className = 'status-badge status-error';
+          statusBadge.textContent = data.status.description || 'Error';
+        }
+
+      } catch (error) {
+        outputContent.textContent = 'Network Error: Could not connect to the Judge0 execution server. This might be due to rate limits or the public server being down.';
+        statusBadge.className = 'status-badge status-error';
+        statusBadge.textContent = 'Network Error';
+      } finally {
+        runBtn.disabled = false;
+        runIcon.innerHTML = '▶';
+        runText.textContent = 'Run Code';
+      }
+    }
+
+    runBtn.addEventListener('click', runCode);
+
+    // --- CODE CONVERSION LOGIC ---
+    const convertBtn = document.getElementById('convert-btn');
+    
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.display = 'block';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transform = 'translateX(-50%) translateY(120%)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function convertCode(sourceCode, fromLang, toLang) {
+      if (fromLang === toLang) return sourceCode;
+
+      let lines = sourceCode.split('\n');
+      let resultLines = [];
+
+      // Basic Rule-Based Conversion
+      for (let line of lines) {
+        let trimmed = line.trim();
+        let indent = line.match(/^\s*/)[0];
+
+        // 1. Comments
+        if (fromLang === 'python' && trimmed.startsWith('#')) {
+          line = line.replace('#', '//');
+        } else if (fromLang !== 'python' && trimmed.startsWith('//') && toLang === 'python') {
+          line = line.replace('//', '#');
+        }
+
+        // 2. Print Statements
+        if (fromLang === 'python' && trimmed.startsWith('print(')) {
+          let content = trimmed.match(/print\((.*)\)/);
+          if (content) {
+            let val = content[1];
+            if (toLang === 'c') line = `${indent}printf(${val});\n${indent}printf("\\n");`;
+            else if (toLang === 'cpp') line = `${indent}std::cout << ${val} << std::endl;`;
+            else if (toLang === 'java') line = `${indent}System.out.println(${val});`;
+          }
+        } else if (fromLang === 'java' && trimmed.startsWith('System.out.println(')) {
+          let content = trimmed.match(/System\.out\.println\((.*)\);?/);
+          if (content) {
+            let val = content[1];
+            if (toLang === 'python') line = `${indent}print(${val})`;
+            else if (toLang === 'c') line = `${indent}printf(${val});\n${indent}printf("\\n");`;
+            else if (toLang === 'cpp') line = `${indent}std::cout << ${val} << std::endl;`;
+          }
+        }
+
+        // 3. For Loops (Simple range-based)
+        if (fromLang === 'python' && trimmed.startsWith('for ') && trimmed.includes('in range(')) {
+          let match = trimmed.match(/for (\w+) in range\((.*)\):/);
+          if (match) {
+            let varName = match[1];
+            let rangeVal = match[2];
+            if (toLang !== 'python') {
+              line = `${indent}for (int ${varName} = 0; ${varName} < ${rangeVal}; ${varName}++) {`;
+            }
+          }
+        }
+
+        // 4. Semicolons
+        if (toLang !== 'python' && !line.trim().endsWith(';') && !line.trim().endsWith('{') && !line.trim().endsWith('}') && line.trim().length > 0 && !line.trim().startsWith('//')) {
+          if (!line.includes('if ') && !line.includes('for ') && !line.includes('while ')) {
+             // line += ';'; // Disabled automatic semicolon for now to avoid mess
+          }
+        } else if (toLang === 'python' && line.trim().endsWith(';')) {
+          line = line.slice(0, -1);
+        }
+
+        resultLines.push(line);
+      }
+
+      let finalResult = resultLines.join('\n');
+
+      // Wrap in boilerplate if needed
+      if (fromLang === 'python' && toLang !== 'python') {
+        if (toLang === 'c') {
+          finalResult = `#include <stdio.h>\n\nint main() {\n${finalResult.split('\n').map(l => '    ' + l).join('\n')}\n    return 0;\n}`;
+        } else if (toLang === 'cpp') {
+          finalResult = `#include <iostream>\n\nint main() {\n${finalResult.split('\n').map(l => '    ' + l).join('\n')}\n    return 0;\n}`;
+        } else if (toLang === 'java') {
+          finalResult = `public class Main {\n    public static void main(String[] args) {\n${finalResult.split('\n').map(l => '        ' + l).join('\n')}\n    }\n}`;
+        }
+      }
+
+      return finalResult;
+    }
+
+    convertBtn.addEventListener('click', () => {
+      const currentLang = document.getElementById('lang-select').value;
+      const targetLang = prompt("Enter target language (python, c, cpp, java):", currentLang === 'python' ? 'java' : 'python');
+      
+      if (!targetLang || !['python', 'c', 'cpp', 'java'].includes(targetLang.toLowerCase())) {
+        showToast("Invalid target language!");
+        return;
+      }
+
+      const sourceCode = window.monacoEditor.getValue();
+      const converted = convertCode(sourceCode, currentLang, targetLang.toLowerCase());
+      
+      // Update UI
+      document.getElementById('lang-select').value = targetLang.toLowerCase();
+      const model = monacoEditor.getModel();
+      monaco.editor.setModelLanguage(model, langModes[targetLang.toLowerCase()]);
+      monacoEditor.setValue(converted);
+      
+      showToast(`Converted ${currentLang} to ${targetLang}!`);
+    });
+  </script>
+</body>
+
+</html>

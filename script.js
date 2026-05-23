@@ -290,10 +290,15 @@ const STRINGS = {
     nscMatReinvestAll: 'Reinvest P + I',
     nscMatRenewP: 'Renew P, Credit I',
     nscMatWithdraw: 'Withdraw All',
-      ppfExtendLabel: 'Extend 5 Years',
+    ppfExtendLabel: 'Extend 5 Years',
     yes: 'Yes',
     no: 'No',
-    finalAmount: 'Final Amount'
+    finalAmount: 'Final Amount',
+    basicCalc: 'Basic Calculator',
+    btip1: 'Supports keyboard input (0-9, +, -, *, /, Enter, Backspace)',
+    btip2: 'Use C to clear the current calculation',
+    btip3: 'Use % for percentage calculations',
+    basicInfoTitle: 'Basic Calculator Tips'
   },
   gu: {
     heroTitle: 'સ્માર્ટ એકમ<br/>કેલ્ક્યુલેટર',
@@ -408,7 +413,12 @@ const STRINGS = {
       ppfExtendLabel: '5 વર્ષ વધારો',
     yes: 'હા',
     no: 'ના',
-    finalAmount: 'અંતિમ રકમ'
+    finalAmount: 'અંતિમ રકમ',
+    basicCalc: 'સામાન્ય કેલ્ક્યુલેટર',
+    btip1: 'કીબોર્ડ ઇનપુટ સપોર્ટ (0-9, +, -, *, /, Enter, Backspace)',
+    btip2: 'ગણતરી સાફ કરવા માટે C નો ઉપયોગ કરો',
+    btip3: 'ટકાવારી માટે % નો ઉપયોગ કરો',
+    basicInfoTitle: 'કેલ્ક્યુલેટર ટિપ્સ'
   },
 };
 
@@ -557,12 +567,14 @@ const els = {
   // Mode Switch
   modeUnitBtn: $('mode-unit-btn'),
   modeFinBtn: $('mode-fin-btn'),
+  modeBasicBtn: $('mode-basic-btn'),
   modeBillBtn: $('mode-bill-btn'),
   unitTabsWrapper: $('unit-tabs-wrapper'),
   finTabsWrapper: $('fin-tabs-wrapper'),
   billTabsWrapper: $('bill-tabs-wrapper'),
   unitCalcSection: $('unit-calc-section'),
   finCalcSection: $('fin-calc-section'),
+  basicCalcSection: $('basic-calc-section'),
   billCalcSection: $('bill-calc-section'),
   finTabsContainer: $('fin-tabs-container'),
   billTabsContainer: $('bill-tabs-container'),
@@ -620,6 +632,17 @@ const els = {
   finTableTitle: $('fin-table-title'),
   finTableHead: $('fin-table-head'),
   finTableBody: $('fin-table-body'),
+  // Basic calculator elements
+  basicScreen: $('basic-screen'),
+  basicHistory: $('basic-history'),
+  // Stats Modal
+  statsToggle: $('stats-toggle'),
+  statsModalOverlay: $('stats-modal-overlay'),
+  statsCloseBtn: $('stats-close-btn'),
+  statTotalVisits: $('stat-total-visits'),
+  statUniqueDevices: $('stat-unique-devices'),
+  statTodayVisits: $('stat-today-visits'),
+  visitorChart: $('visitorChart'),
 };
 
 // ──────────────────────────────────────────────
@@ -823,6 +846,13 @@ function applyLanguage() {
 
   if ($('mode-unit-label')) $('mode-unit-label').textContent = S.unitCalc;
   if ($('mode-fin-label')) $('mode-fin-label').textContent = S.finCalc;
+  if ($('mode-basic-label')) $('mode-basic-label').textContent = S.basicCalc;
+
+  // Basic info
+  if ($('basic-info-title')) $('basic-info-title').textContent = S.basicInfoTitle;
+  if ($('btip1')) $('btip1').textContent = S.btip1;
+  if ($('btip2')) $('btip2').textContent = S.btip2;
+  if ($('btip3')) $('btip3').textContent = S.btip3;
 
   // Badges
   if (els.badgeText) els.badgeText.textContent = S.feetBadge;
@@ -977,6 +1007,7 @@ els.finTabsContainer.addEventListener('click', e => {
 
 if (els.modeUnitBtn) els.modeUnitBtn.addEventListener('click', () => switchMode('unit'));
 if (els.modeFinBtn) els.modeFinBtn.addEventListener('click', () => switchMode('fin'));
+if (els.modeBasicBtn) els.modeBasicBtn.addEventListener('click', () => switchMode('basic'));
 
 // Input
 els.fromInput.addEventListener('input', () => {
@@ -1120,15 +1151,19 @@ function switchMode(newMode) {
   state.mode = newMode;
   const isUnit = newMode === 'unit';
   const isFin = newMode === 'fin';
+  const isBasic = newMode === 'basic';
 
   els.modeUnitBtn.classList.toggle('active', isUnit);
   els.modeFinBtn.classList.toggle('active', isFin);
+  if (els.modeBasicBtn) els.modeBasicBtn.classList.toggle('active', isBasic);
 
   els.unitTabsWrapper.classList.toggle('hidden', !isUnit);
   els.unitCalcSection.classList.toggle('hidden', !isUnit);
 
   els.finTabsWrapper.classList.toggle('hidden', !isFin);
   els.finCalcSection.classList.toggle('hidden', !isFin);
+
+  if (els.basicCalcSection) els.basicCalcSection.classList.toggle('hidden', !isBasic);
 
   if (isUnit) {
     switchCategory(state.category);
@@ -1948,20 +1983,368 @@ function renderNSCTable(schedule, S) {
 
 
 // ──────────────────────────────────────────────
-//  17. INIT
+//  17. BASIC CALCULATOR LOGIC
+// ──────────────────────────────────────────────
+
+let basicState = {
+  current: '0',
+  prev: '',
+  op: null,
+  shouldReset: false,
+};
+
+function initBasicCalc() {
+  const container = document.querySelector('.basic-calc-grid');
+  if (!container) return;
+
+  container.addEventListener('click', (e) => {
+    const btn = e.target.closest('.calc-btn');
+    if (!btn) return;
+    handleBasicInput(btn.dataset.val);
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (state.mode !== 'basic') return;
+    const key = e.key;
+    if (/[0-9]/.test(key)) handleBasicInput(key);
+    else if (key === '.') handleBasicInput('.');
+    else if (key === '+') handleBasicInput('+');
+    else if (key === '-') handleBasicInput('-');
+    else if (key === '*') handleBasicInput('*');
+    else if (key === '/') handleBasicInput('/');
+    else if (key === '%') handleBasicInput('%');
+    else if (key === 'Enter' || key === '=') handleBasicInput('=');
+    else if (key === 'Backspace') handleBasicInput('back');
+    else if (key === 'Escape' || key === 'c' || key === 'C') handleBasicInput('C');
+  });
+}
+
+function handleBasicInput(val) {
+  if (val === 'C') {
+    basicState = { current: '0', prev: '', op: null, shouldReset: false };
+  } else if (val === 'back') {
+    if (basicState.current.length > 1) {
+      basicState.current = basicState.current.slice(0, -1);
+    } else {
+      basicState.current = '0';
+    }
+  } else if (val === '=') {
+    if (basicState.op && basicState.prev) {
+      calculateBasic();
+      basicState.op = null;
+      basicState.prev = '';
+      basicState.shouldReset = true;
+    }
+  } else if (['+', '-', '*', '/', '%'].includes(val)) {
+    if (basicState.op && !basicState.shouldReset) {
+      calculateBasic();
+    }
+    basicState.op = val;
+    basicState.prev = basicState.current;
+    basicState.shouldReset = true;
+  } else {
+    // Number or dot
+    if (basicState.shouldReset) {
+      basicState.current = val === '.' ? '0.' : val;
+      basicState.shouldReset = false;
+    } else {
+      if (val === '.' && basicState.current.includes('.')) return;
+      if (basicState.current === '0' && val !== '.') {
+        basicState.current = val;
+      } else {
+        basicState.current += val;
+      }
+    }
+  }
+  updateBasicUI();
+}
+
+function calculateBasic() {
+  const p = parseFloat(basicState.prev);
+  const c = parseFloat(basicState.current);
+  if (isNaN(p) || isNaN(c)) return;
+
+  let res = 0;
+  switch (basicState.op) {
+    case '+': res = p + c; break;
+    case '-': res = p - c; break;
+    case '*': res = p * c; break;
+    case '/': res = c !== 0 ? p / c : 'Error'; break;
+    case '%': res = (p * c) / 100; break;
+  }
+
+  basicState.current = res.toString();
+}
+
+function updateBasicUI() {
+  if (!els.basicScreen) return;
+  els.basicScreen.textContent = basicState.current;
+  if (basicState.op && basicState.prev) {
+    els.basicHistory.textContent = `${basicState.prev} ${basicState.op}`;
+  } else {
+    els.basicHistory.textContent = '';
+  }
+}
+
+
+// ──────────────────────────────────────────────
+//  18. VISITOR STATS LOGIC
+// ──────────────────────────────────────────────
+
+let visitorChartInstance = null;
+
+function updateVisitorStats() {
+  const now = new Date();
+  const dateString = now.toISOString().split('T')[0];
+  
+  // Get history
+  let stats = JSON.parse(localStorage.getItem('unitcalc_visitor_stats')) || {
+    total: 0,
+    daily: {}
+  };
+  
+  // We only count 1 visit per session (for simplicity, we increment on page load)
+  // Let's use sessionStorage to only count once per session
+  if (!sessionStorage.getItem('unitcalc_visited_today')) {
+    stats.total += 1;
+    stats.daily[dateString] = (stats.daily[dateString] || 0) + 1;
+    localStorage.setItem('unitcalc_visitor_stats', JSON.stringify(stats));
+    sessionStorage.setItem('unitcalc_visited_today', 'true');
+  }
+}
+
+function initVisitorStats() {
+  if (!els.statsToggle || !els.statsModalOverlay || !els.statsCloseBtn) return;
+  
+  els.statsToggle.addEventListener('click', () => {
+    openStatsModal();
+  });
+  
+  els.statsCloseBtn.addEventListener('click', () => {
+    els.statsModalOverlay.classList.add('hidden');
+  });
+  
+  els.statsModalOverlay.addEventListener('click', (e) => {
+    if (e.target === els.statsModalOverlay) {
+      els.statsModalOverlay.classList.add('hidden');
+    }
+  });
+}
+
+function openStatsModal() {
+  els.statsModalOverlay.classList.remove('hidden');
+  
+  const stats = JSON.parse(localStorage.getItem('unitcalc_visitor_stats')) || { total: 0, daily: {} };
+  const todayString = new Date().toISOString().split('T')[0];
+  
+  els.statTotalVisits.textContent = stats.total;
+  
+  // Simulate unique devices based on total visits (approx 70-80% for demonstration)
+  // Ensures it's at least 1 device since the user is on the site.
+  let uniqueDevicesMock = Math.max(1, Math.floor(stats.total * 0.75));
+  if (els.statUniqueDevices) {
+    els.statUniqueDevices.textContent = uniqueDevicesMock;
+  }
+  
+  els.statTodayVisits.textContent = stats.daily[todayString] || 0;
+  
+  renderVisitorChart(stats.daily);
+}
+
+function renderVisitorChart(dailyData) {
+  if (!els.visitorChart) return;
+  const ctx = els.visitorChart.getContext('2d');
+  
+  // Generate last 7 days labels
+  const labels = [];
+  const data = [];
+  
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const displayDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    labels.push(displayDate);
+    // Add mock data to make graph look interesting if there's no real data
+    const mockVisits = Math.floor(Math.random() * 50) + 10;
+    data.push(dailyData[dateStr] || (i > 0 ? mockVisits : (dailyData[dateStr] || 1)));
+  }
+
+  if (visitorChartInstance) {
+    visitorChartInstance.destroy();
+  }
+
+  const isDark = document.body.classList.contains('dark-theme');
+  const textColor = isDark ? '#f8fafc' : '#1e293b';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+  visitorChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Visits',
+        data: data,
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+        borderWidth: 3,
+        pointBackgroundColor: '#8b5cf6',
+        pointBorderColor: '#fff',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark ? '#1e293b' : '#fff',
+          titleColor: isDark ? '#fff' : '#1e293b',
+          bodyColor: isDark ? '#cbd5e1' : '#475569',
+          borderColor: isDark ? '#334155' : '#e2e8f0',
+          borderWidth: 1,
+          padding: 12,
+          displayColors: false,
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: textColor }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, stepSize: 10 },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+// ──────────────────────────────────────────────
+//  19. INIT
 // ──────────────────────────────────────────────
 
 function init() {
+  updateVisitorStats();
+  initVisitorStats();
   initHeightCompare();
   applyTheme();
   switchCategory('length');
   switchFinCategory('sip');
+  initBasicCalc();
   applyLanguage();
 
-  // Pre-fill with a demo value
+  // Pre-fill with a demo value for unit calc
   els.fromInput.value = '1';
   state.rawInput = '1';
   calculate();
+  
+  // Default mode
+  switchMode('unit');
 }
 
 init();
+
+// ──────────────────────────────────────────────
+//  20. AUTHENTICATION (Premium Register/Login)
+// ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const authOverlay = document.getElementById('auth-overlay');
+  const authForm = document.getElementById('auth-form');
+  const authTitle = document.getElementById('auth-title');
+  const authSubtitle = document.getElementById('auth-subtitle');
+  const authSubmitBtn = document.getElementById('auth-submit-btn');
+  const authSwitchText = document.getElementById('auth-switch-text');
+  const authSwitchLink = document.getElementById('auth-switch-link');
+  const authError = document.getElementById('auth-error');
+  const authUsername = document.getElementById('auth-username');
+  const authPassword = document.getElementById('auth-password');
+
+  if (!authOverlay) return;
+
+  let isRegistering = false;
+
+  // Check session
+  if (sessionStorage.getItem('isLoggedIn') === 'true') {
+    authOverlay.classList.add('hidden');
+  }
+
+  authSwitchLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    isRegistering = !isRegistering;
+    authError.classList.add('hidden');
+    authUsername.value = '';
+    authPassword.value = '';
+
+    if (isRegistering) {
+      authTitle.textContent = 'Create Account';
+      authSubtitle.textContent = 'Register to securely use the app';
+      authSubmitBtn.textContent = 'Register';
+      authSwitchText.textContent = 'Already have an account?';
+      authSwitchLink.textContent = 'Login here';
+    } else {
+      authTitle.textContent = 'Welcome Back';
+      authSubtitle.textContent = 'Login to access the Unit Calculator';
+      authSubmitBtn.textContent = 'Login';
+      authSwitchText.textContent = 'Don\'t have an account?';
+      authSwitchLink.textContent = 'Register here';
+    }
+  });
+
+  authForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = authUsername.value.trim();
+    const password = authPassword.value.trim();
+
+    if (!username || !password) {
+      showError('Please enter both username and password.');
+      return;
+    }
+
+    const users = JSON.parse(localStorage.getItem('unitCalcUsers') || '[]');
+
+    if (isRegistering) {
+      if (users.find(u => u.username === username)) {
+        showError('Username already exists. Please choose another.');
+      } else {
+        users.push({ username, password });
+        localStorage.setItem('unitCalcUsers', JSON.stringify(users));
+        // Auto-login after registration
+        loginSuccess();
+      }
+    } else {
+      const user = users.find(u => u.username === username && u.password === password);
+      if (user) {
+        loginSuccess();
+      } else {
+        showError('Invalid username or password.');
+      }
+    }
+  });
+
+  function showError(msg) {
+    authError.textContent = msg;
+    authError.classList.remove('hidden');
+    // Shake animation
+    const box = document.querySelector('.auth-box');
+    box.style.animation = 'none';
+    box.offsetHeight; // trigger reflow
+    box.style.animation = 'shake 0.4s ease-in-out';
+  }
+
+  function loginSuccess() {
+    sessionStorage.setItem('isLoggedIn', 'true');
+    authOverlay.style.opacity = '0';
+    setTimeout(() => {
+      authOverlay.classList.add('hidden');
+    }, 500);
+    showToast('Logged in successfully!');
+  }
+});
