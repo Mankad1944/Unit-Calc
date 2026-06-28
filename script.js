@@ -782,7 +782,16 @@ function calculate() {
 
   // Convert
   const resultVal = convert(inputValue, fromKey, toKey, category);
-  els.resultDisplay.textContent = isNaN(resultVal) ? '—' : formatNum(resultVal, category);
+  
+  let resultText = '';
+  if (category === 'length' && toKey === 'ft') {
+    const toUnit = getUnit('length', toKey);
+    const outMetres = toUnit ? toUnit.toBase(resultVal) : resultVal;
+    resultText = metreToFeetInch(outMetres);
+  } else {
+    resultText = isNaN(resultVal) ? '—' : formatNum(resultVal, category);
+  }
+  els.resultDisplay.textContent = resultText;
 
   // Foot-inch display for length outputs
   if (isLength) {
@@ -796,11 +805,19 @@ function calculate() {
     els.fiLabel.textContent = STRINGS[lang].feetLabel;
     const inFi = metreToFeetInchLong(inMetres, lang);
     const outFi = metreToFeetInchLong(outMetres, lang);
-    els.fiValue.textContent = `${inFi}  →  ${outFi}`;
+    
+    // Update fiValue depending on input type
+    if (isFeetInchInput) {
+      const toLabelText = lang === 'gu' ? toUnit.labelGu : toUnit.labelEn;
+      els.fiValue.textContent = `${inFi}  →  ${formatNum(resultVal, category)} ${toLabelText}`;
+    } else {
+      const fromLabelText = lang === 'gu' ? fromUnit.labelGu : fromUnit.labelEn;
+      els.fiValue.textContent = `${formatNum(inputValue, category)} ${fromLabelText}  →  ${outFi}`;
+    }
 
     // Show formatted sub-text under panels
-    els.fromFormatted.textContent = `= ${metreToFeetInch(inMetres)}`;
-    els.toFormatted.textContent = `= ${metreToFeetInch(outMetres)}`;
+    els.fromFormatted.textContent = fromKey === 'ft' ? '' : `= ${metreToFeetInch(inMetres)}`;
+    els.toFormatted.textContent = toKey === 'ft' ? '' : `= ${metreToFeetInch(outMetres)}`;
   } else {
     els.feetInchOutput.classList.add('hidden');
     els.fromFormatted.textContent = '';
@@ -2252,99 +2269,4 @@ function init() {
 
 init();
 
-// ──────────────────────────────────────────────
-//  20. AUTHENTICATION (Premium Register/Login)
-// ──────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const authOverlay = document.getElementById('auth-overlay');
-  const authForm = document.getElementById('auth-form');
-  const authTitle = document.getElementById('auth-title');
-  const authSubtitle = document.getElementById('auth-subtitle');
-  const authSubmitBtn = document.getElementById('auth-submit-btn');
-  const authSwitchText = document.getElementById('auth-switch-text');
-  const authSwitchLink = document.getElementById('auth-switch-link');
-  const authError = document.getElementById('auth-error');
-  const authUsername = document.getElementById('auth-username');
-  const authPassword = document.getElementById('auth-password');
 
-  if (!authOverlay) return;
-
-  let isRegistering = false;
-
-  // Check session
-  if (sessionStorage.getItem('isLoggedIn') === 'true') {
-    authOverlay.classList.add('hidden');
-  }
-
-  authSwitchLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    isRegistering = !isRegistering;
-    authError.classList.add('hidden');
-    authUsername.value = '';
-    authPassword.value = '';
-
-    if (isRegistering) {
-      authTitle.textContent = 'Create Account';
-      authSubtitle.textContent = 'Register to securely use the app';
-      authSubmitBtn.textContent = 'Register';
-      authSwitchText.textContent = 'Already have an account?';
-      authSwitchLink.textContent = 'Login here';
-    } else {
-      authTitle.textContent = 'Welcome Back';
-      authSubtitle.textContent = 'Login to access the Unit Calculator';
-      authSubmitBtn.textContent = 'Login';
-      authSwitchText.textContent = 'Don\'t have an account?';
-      authSwitchLink.textContent = 'Register here';
-    }
-  });
-
-  authForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const username = authUsername.value.trim();
-    const password = authPassword.value.trim();
-
-    if (!username || !password) {
-      showError('Please enter both username and password.');
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem('unitCalcUsers') || '[]');
-
-    if (isRegistering) {
-      if (users.find(u => u.username === username)) {
-        showError('Username already exists. Please choose another.');
-      } else {
-        users.push({ username, password });
-        localStorage.setItem('unitCalcUsers', JSON.stringify(users));
-        // Auto-login after registration
-        loginSuccess();
-      }
-    } else {
-      const user = users.find(u => u.username === username && u.password === password);
-      if (user) {
-        loginSuccess();
-      } else {
-        showError('Invalid username or password.');
-      }
-    }
-  });
-
-  function showError(msg) {
-    authError.textContent = msg;
-    authError.classList.remove('hidden');
-    // Shake animation
-    const box = document.querySelector('.auth-box');
-    box.style.animation = 'none';
-    box.offsetHeight; // trigger reflow
-    box.style.animation = 'shake 0.4s ease-in-out';
-  }
-
-  function loginSuccess() {
-    sessionStorage.setItem('isLoggedIn', 'true');
-    authOverlay.style.opacity = '0';
-    setTimeout(() => {
-      authOverlay.classList.add('hidden');
-    }, 500);
-    showToast('Logged in successfully!');
-  }
-});
