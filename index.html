@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Unit Calculator – Convert between metric, imperial, Gujarati traditional units and more. Supports 5'10&quot; feet-inch format and Gujarati language." />
+  <title>Unit Calculator | એકમ કેલ્ક્યુલેટર</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Background Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo" style="text-decoration: none;">
+        <div class="logo-icon">⚖️</div>
+        <div class="logo-text">
+          <span class="logo-en" id="logo-en">Unit Calc</span>
+          <span class="logo-gu" id="logo-gu">એકમ કેલ્ક્યુલેટર</span>
+        </div>
+      </a>
+      <div class="header-controls">
+        <a href="pdf_merger.html" class="nav-link" title="Open PDF Tools" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.35); color: #8b5cf6; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(139, 92, 246, 0.25)'" onmouseout="this.style.background='rgba(139, 92, 246, 0.15)'">
+          <span>📄</span> PDF Toolkit
+        </a>
+        <a href="compiler.html" class="nav-link" title="Open Online Compiler" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #10b981; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(16, 185, 129, 0.25)'" onmouseout="this.style.background='rgba(16, 185, 129, 0.15)'">
+          <span>💻</span> Compiler
+        </a>
+        <a href="color_viewer.html" class="nav-link" title="Open Color Viewer" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.35); color: #ec4899; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(236, 72, 153, 0.25)'" onmouseout="this.style.background='rgba(236, 72, 153, 0.15)'">
+          <span>🎨</span> Color Viewer
+        </a>
+        <a href="qr_connect.html" class="nav-link" title="Open QR Connect" style="text-decoration: none; padding: 6px 14px; border-radius: 999px; background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.35); color: #06b6d4; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(6, 182, 212, 0.25)'" onmouseout="this.style.background='rgba(6, 182, 212, 0.15)'">
+          <span>📱</span> QR Connect
+        </a>
+        <button class="lang-toggle" id="lang-toggle" title="Toggle Language">
+          <span class="lang-en">🇮🇳 ગુજરાતી</span>
+          <span class="lang-gu hidden">🌐 English</span>
+        </button>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge" id="hero-badge">All Units · All Formats · Any Language</div>
+    <h1 class="hero-title" id="hero-title">
+      <span class="gradient-text">Smart Unit</span>
+      <br />Calculator
+    </h1>
+    <p class="hero-subtitle" id="hero-subtitle">
+      Convert metric, imperial, Gujarati traditional units and more
+    </p>
+  </section>
+
+  <!-- Mode Switcher -->
+  <div class="mode-switcher-wrapper">
+    <div class="mode-switcher" id="mode-switcher">
+      <button class="mode-btn active" data-mode="unit" id="mode-unit-btn">
+        <span class="mode-icon">⚖️</span>
+        <span class="mode-label" id="mode-unit-label">Unit Calculator</span>
+      </button>
+      <button class="mode-btn" data-mode="fin" id="mode-fin-btn">
+        <span class="mode-icon">💰</span>
+        <span class="mode-label" id="mode-fin-label">Financial Calculator</span>
+      </button>
+      <button class="mode-btn" data-mode="basic" id="mode-basic-btn">
+        <span class="mode-icon">🔢</span>
+        <span class="mode-label" id="mode-basic-label">Basic Calculator</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Category Tabs -->
+  <div class="tabs-wrapper" id="unit-tabs-wrapper">
+    <div class="tabs" id="tabs-container">
+      <button class="tab active" data-category="length" id="tab-length">
+        <span class="tab-icon">📏</span>
+        <span class="tab-label" data-en="Length" data-gu="લંબાઈ">Length</span>
+      </button>
+      <button class="tab" data-category="area" id="tab-area">
+        <span class="tab-icon">🔲</span>
+        <span class="tab-label" data-en="Area" data-gu="ક્ષેત્રફળ">Area</span>
+      </button>
+      <button class="tab" data-category="weight" id="tab-weight">
+        <span class="tab-icon">⚖️</span>
+        <span class="tab-label" data-en="Weight" data-gu="વજન">Weight</span>
+      </button>
+      <button class="tab" data-category="volume" id="tab-volume">
+        <span class="tab-icon">🧪</span>
+        <span class="tab-label" data-en="Volume" data-gu="જથ્થો">Volume</span>
+      </button>
+      <button class="tab" data-category="temperature" id="tab-temperature">
+        <span class="tab-icon">🌡️</span>
+        <span class="tab-label" data-en="Temperature" data-gu="તાપમાન">Temperature</span>
+      </button>
+      <button class="tab" data-category="speed" id="tab-speed">
+        <span class="tab-icon">💨</span>
+        <span class="tab-label" data-en="Speed" data-gu="ઝડપ">Speed</span>
+      </button>
+      <button class="tab" data-category="time" id="tab-time">
+        <span class="tab-icon">⏱️</span>
+        <span class="tab-label" data-en="Time" data-gu="સમય">Time</span>
+      </button>
+      <button class="tab" data-category="digital" id="tab-digital">
+        <span class="tab-icon">💾</span>
+        <span class="tab-label" data-en="Digital" data-gu="ડિજિટલ">Digital</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Financial Tabs -->
+  <div class="tabs-wrapper hidden" id="fin-tabs-wrapper">
+    <div class="tabs" id="fin-tabs-container">
+      <button class="tab active" data-fincat="sip" id="fintab-sip">
+        <span class="tab-icon">📈</span>
+        <span class="tab-label" id="fl-sip">SIP / MF</span>
+      </button>
+      <button class="tab" data-fincat="fd" id="fintab-fd">
+        <span class="tab-icon">🏦</span>
+        <span class="tab-label" id="fl-fd">FD</span>
+      </button>
+      <button class="tab" data-fincat="rd" id="fintab-rd">
+        <span class="tab-icon">🔁</span>
+        <span class="tab-label" id="fl-rd">RD</span>
+      </button>
+      <button class="tab" data-fincat="ppf" id="fintab-ppf">
+        <span class="tab-icon">🛡️</span>
+        <span class="tab-label" id="fl-ppf">PPF</span>
+      </button>
+      <button class="tab" data-fincat="nsc" id="fintab-nsc">
+        <span class="tab-icon">📜</span>
+        <span class="tab-label" id="fl-nsc">NSC</span>
+      </button>
+      <button class="tab" data-fincat="loan" id="fintab-loan">
+        <span class="tab-icon">📉</span>
+        <span class="tab-label" id="fl-loan">Loan / EMI</span>
+      </button>
+    </div>
+  </div>
+
+
+
+  <!-- Main Calculator -->
+  <main class="main">
+    
+    <!-- UNIT CALCULATOR SECTION -->
+    <div id="unit-calc-section">
+    <div class="calculator-card" id="calculator-card">
+
+      <!-- Feet-inch special badge (only for length) -->
+      <!-- <div class="special-badge hidden" id="feet-badge">
+        <span class="badge-icon">✨</span>
+        <span id="badge-text">Supports 5′10″ foot-inch format for input & output</span>
+      </div> -->
+
+      <!-- Gujarati units badge -->
+      <div class="gujarati-badge hidden" id="gujarati-badge">
+        <span class="badge-icon">🏡</span>
+        <span id="guj-badge-text">Includes Gujarati traditional units: વાર, વીઘા, ગજ, ચોર્સ, ગૂઠ</span>
+      </div>
+
+      <!-- Height Compare Toggle Button -->
+      <div class="height-compare-toggle-wrapper hidden" id="height-compare-toggle-wrapper">
+        <button class="height-compare-btn" id="height-compare-btn">
+          <span class="hc-icon">🧍</span>
+          <span id="hc-btn-text">Compare Heights</span>
+        </button>
+      </div>
+
+      <!-- Converter Layout -->
+      <div class="converter-layout">
+
+        <!-- FROM -->
+        <div class="unit-panel from-panel">
+          <label class="panel-label" id="from-label">From</label>
+          <div class="input-row">
+            <input type="text" class="value-input" id="from-input" placeholder="Enter value…" autocomplete="off" />
+            <div class="feet-inch-hint hidden" id="feet-hint">
+              <small id="feet-hint-text">Try: 5'10" or 5ft 10in</small>
+            </div>
+          </div>
+          <div class="unit-select-wrapper">
+            <select class="unit-select" id="from-unit"></select>
+          </div>
+          <div class="formatted-display" id="from-formatted"></div>
+        </div>
+
+        <!-- Swap Button -->
+        <div class="swap-col">
+          <button class="swap-btn" id="swap-btn" title="Swap units">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- TO -->
+        <div class="unit-panel to-panel">
+          <label class="panel-label" id="to-label">To</label>
+          <div class="result-row">
+            <div class="result-display" id="result-display">—</div>
+          </div>
+          <div class="unit-select-wrapper">
+            <select class="unit-select" id="to-unit"></select>
+          </div>
+          <div class="formatted-display" id="to-formatted"></div>
+        </div>
+      </div>
+
+      <!-- Feet-Inch Detailed Output -->
+      <div class="feet-inch-output hidden" id="feet-inch-output">
+        <div class="fi-card">
+          <div class="fi-icon">👟</div>
+          <div class="fi-content">
+            <div class="fi-label" id="fi-label">Foot-Inch Format</div>
+            <div class="fi-value" id="fi-value"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Height Comparison Section -->
+      <div class="height-compare-section hidden" id="height-compare-section">
+        <div class="hc-header">
+          <h3 id="hc-title">Height Comparison</h3>
+          <button class="hc-close-btn" id="hc-close-btn">&times;</button>
+        </div>
+
+        <div class="hc-inputs">
+          <div class="hc-input-group">
+            <label id="hc-label-a">Person A</label>
+            <input type="text" id="hc-input-a" placeholder="e.g. 5'10&quot;" autocomplete="off" />
+          </div>
+          <div class="hc-vs">VS</div>
+          <div class="hc-input-group">
+            <label id="hc-label-b">Person B</label>
+            <input type="text" id="hc-input-b" placeholder="e.g. 6'2&quot;" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="hc-graph-container" id="hc-graph-container">
+          <div class="hc-y-axis" id="hc-y-axis">
+            <!-- ticks generated via JS -->
+          </div>
+          <div class="hc-graph-area" id="hc-graph-area">
+            <div class="hc-compare-line" id="hc-compare-line"></div>
+            <!-- Person A SVG -->
+            <div class="hc-person-wrapper" id="hc-person-a-wrapper">
+              <div class="hc-person-val" id="hc-val-a">--</div>
+              <!-- human SVG -->
+              <svg viewBox="0 10 100 280" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-a">
+                <path
+                  d="M50 10 C60 10 65 15 65 25 C65 35 60 40 50 40 C40 40 35 35 35 25 C35 15 40 10 50 10 Z 
+                                 M25 50 C20 50 20 60 25 60 L35 60 L35 280 C35 290 45 290 45 280 L45 160 L55 160 L55 280 C55 290 65 290 65 280 L65 60 L75 60 C80 60 80 50 75 50 Z" />
+              </svg>
+              <div class="hc-person-label" id="hc-name-a">A</div>
+            </div>
+            <!-- Person B SVG -->
+            <div class="hc-person-wrapper" id="hc-person-b-wrapper">
+              <div class="hc-person-val" id="hc-val-b">--</div>
+              <!-- human SVG -->
+              <svg viewBox="0 10 100 280" preserveAspectRatio="none" class="hc-human-svg" id="hc-svg-b">
+                <path
+                  d="M50 10 C60 10 65 15 65 25 C65 35 60 40 50 40 C40 40 35 35 35 25 C35 15 40 10 50 10 Z 
+                                 M25 50 C20 50 20 60 25 60 L35 60 L35 280 C35 290 45 290 45 280 L45 160 L55 160 L55 280 C55 290 65 290 65 280 L65 60 L75 60 C80 60 80 50 75 50 Z" />
+              </svg>
+              <div class="hc-person-label" id="hc-name-b">B</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- All Units Result Grid -->
+      <div class="all-results-section">
+        <div class="all-results-header">
+          <span id="all-label">All Equivalents</span>
+          <button class="copy-all-btn" id="copy-all-btn" title="Copy all results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg>
+            <span id="copy-all-text">Copy All</span>
+          </button>
+        </div>
+        <div class="results-grid" id="results-grid"></div>
+      </div>
+
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel" id="info-panel">
+      <div class="info-icon">💡</div>
+      <div class="info-content">
+        <div class="info-title" id="info-title">Quick Tips</div>
+        <ul class="info-list" id="info-list">
+          <li id="tip1">Type <strong>5'10"</strong> or <strong>5ft 10in</strong> to enter feet and inches</li>
+          <li id="tip2">Switch language to Gujarati for traditional units</li>
+          <li id="tip3">Click any result card to copy the value</li>
+          <li id="tip4">Use the swap button to reverse conversion</li>
+        </ul>
+      </div>
+    </div>
+    </div> <!-- Close unit-calc-section -->
+
+    <!-- FINANCIAL CALCULATOR SECTION -->
+    <div id="fin-calc-section" class="hidden">
+      <div class="calculator-card fin-card">
+        
+        <div class="fin-layout">
+          <!-- Inputs -->
+          <div class="fin-input-panel">
+            <h3 class="fin-section-title" id="fin-inputs-title">Parameters</h3>
+            <div class="fin-input-grid" id="fin-input-grid">
+              <!-- Inputs injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div class="fin-summary-panel">
+            <h3 class="fin-section-title" id="fin-summary-title">Summary</h3>
+            <div class="fin-summary-grid" id="fin-summary">
+              <!-- Summary cards injected dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule / Table -->
+        <div class="fin-table-container">
+          <div class="fin-table-header">
+            <h3 class="fin-section-title" id="fin-table-title">Transaction Details</h3>
+          </div>
+          <div class="fin-table-scroll">
+            <table class="fin-table" id="fin-table">
+              <!-- Table injected dynamically -->
+              <thead id="fin-table-head"></thead>
+              <tbody id="fin-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    
+    <!-- BASIC CALCULATOR SECTION -->
+    <div id="basic-calc-section" class="hidden">
+      <div class="calculator-card basic-card">
+        <div class="basic-calc-container">
+          <div class="basic-calc-display-wrapper">
+            <div class="basic-calc-history" id="basic-history"></div>
+            <div class="basic-calc-screen" id="basic-screen">0</div>
+          </div>
+          <div class="basic-calc-grid">
+            <button class="calc-btn clear" data-val="C">C</button>
+            <button class="calc-btn op" data-val="back">⌫</button>
+            <button class="calc-btn op" data-val="%">%</button>
+            <button class="calc-btn op" data-val="/">÷</button>
+
+            <button class="calc-btn" data-val="7">7</button>
+            <button class="calc-btn" data-val="8">8</button>
+            <button class="calc-btn" data-val="9">9</button>
+            <button class="calc-btn op" data-val="*">×</button>
+
+            <button class="calc-btn" data-val="4">4</button>
+            <button class="calc-btn" data-val="5">5</button>
+            <button class="calc-btn" data-val="6">6</button>
+            <button class="calc-btn op" data-val="-">−</button>
+
+            <button class="calc-btn" data-val="1">1</button>
+            <button class="calc-btn" data-val="2">2</button>
+            <button class="calc-btn" data-val="3">3</button>
+            <button class="calc-btn op" data-val="+">+</button>
+
+            <button class="calc-btn double" data-val="0">0</button>
+            <button class="calc-btn" data-val=".">.</button>
+            <button class="calc-btn equals" data-val="=">=</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-panel">
+        <div class="info-icon">💡</div>
+        <div class="info-content">
+          <div class="info-title" id="basic-info-title">Basic Calculator Tips</div>
+          <ul class="info-list" id="basic-info-list">
+            <li id="btip1">Supports keyboard input (0-9, +, -, *, /, Enter, Backspace)</li>
+            <li id="btip2">Use C to clear the current calculation</li>
+            <li id="btip3">Use % for percentage calculations</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p id="footer-text">Made with ❤️ for Gujarat &nbsp;|&nbsp; <strong>Unit Calculator</strong> &nbsp;|&nbsp; PDF &middot; Compiler &middot; Color Viewer &middot; QR Connect</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+
+
+  <script src="script.js"></script>
+</body>
+
+</html>

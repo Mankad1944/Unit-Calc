@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Color Viewer & Converter – Preview any color by name, HEX, RGB, HSL, CMYK or TailwindCSS class with instant multi-format conversion and shade generation." />
+  <title>Color Viewer & Converter | Unit Calc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .color-viewer-section {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 1.25rem 3.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cv-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.2rem;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.6s ease both;
+      margin-bottom: 2rem;
+    }
+
+    .cv-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .cv-tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+      gap: 4px;
+    }
+
+    .cv-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.45rem 1.1rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .cv-tab-btn.active {
+      background: var(--accent-grd);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+    }
+
+    .cv-card h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .cv-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .cv-input-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .cv-input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-width: 260px;
+    }
+
+    .cv-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.8rem 3.2rem 0.8rem 1.1rem;
+      font-size: 1rem;
+      color: var(--text);
+      font-family: 'Fira Code', 'Inter', monospace;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    body.light .cv-input {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .cv-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    .cv-input::placeholder {
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .cv-color-picker-input {
+      position: absolute;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+      padding: 0;
+    }
+
+    .cv-color-picker-input::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .cv-color-picker-input::-webkit-color-swatch {
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 6px;
+    }
+
+    .cv-btn {
+      background: var(--accent-grd);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.8rem 1.6rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .cv-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45);
+    }
+
+    .cv-btn:active {
+      transform: scale(0.97);
+    }
+
+    .cv-btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    .cv-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+
+    .cv-error {
+      font-size: 0.82rem;
+      color: #f43f5e;
+      min-height: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    /* PREVIEW CONTAINER */
+    .cv-preview-container {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .cv-preview-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cv-preview {
+      width: 100%;
+      height: 230px;
+      border-radius: var(--radius-sm);
+      background: #8b5cf6;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0.6rem;
+      transition: background-color 0.3s ease;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cv-preview-badge {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.4rem 1.1rem;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: 'Fira Code', monospace;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    .cv-preview-contrast-sample {
+      display: flex;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .cv-preview-contrast-sample span {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+    }
+
+    /* CONTRAST & QUICK STATS */
+    .cv-quick-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .cv-stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    body.light .cv-stat-card {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .cv-stat-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .cv-stat-val {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .badge-pass {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+    }
+
+    .badge-fail {
+      color: #f43f5e;
+      background: rgba(244, 63, 94, 0.15);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+    }
+
+    /* INFO GRID */
+    .cv-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (min-width: 600px) {
+      .cv-info-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (min-width: 860px) {
+      .cv-info-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+
+    .cv-info-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+    }
+
+    body.light .cv-info-box {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .cv-info-box:hover {
+      border-color: var(--accent);
+      background: rgba(139, 92, 246, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .cv-info-box.highlight {
+      border-color: rgba(6, 182, 212, 0.5);
+      background: rgba(6, 182, 212, 0.06);
+    }
+
+    .cv-info-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .cv-info-value {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      word-break: break-all;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .cv-copy-hint {
+      font-size: 0.65rem;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .cv-info-box:hover .cv-copy-hint {
+      opacity: 1;
+    }
+
+    /* TAILWIND STAGE */
+    .tailwind-card {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(139, 92, 246, 0.06));
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tw-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    .tw-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent2);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .tw-classes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.6rem;
+    }
+
+    .tw-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tw-item:hover {
+      border-color: var(--accent2);
+      background: rgba(6, 182, 212, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .tw-tag {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .tw-code {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* CONVERSION STAGE */
+    .convert-section {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .convert-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    @media (max-width: 650px) {
+      .convert-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .convert-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .convert-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .convert-select {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.9rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    body.light .convert-select {
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .convert-select option {
+      background: #1e1e2e;
+      color: #fff;
+    }
+
+    body.light .convert-select option {
+      background: #fff;
+      color: #000;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.4rem;
+    }
+
+    .slider-row label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      width: 18px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .slider-row span {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.82rem;
+      width: 38px;
+      text-align: right;
+    }
+
+    /* SHADES & PALETTES */
+    .shades-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .shades-grid {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap: 4px;
+      margin-bottom: 1.5rem;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .shade-box {
+      height: 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 4px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .shade-box:hover {
+      transform: translateY(-3px) scale(1.05);
+      z-index: 2;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .shade-label {
+      background: rgba(0,0,0,0.4);
+      border-radius: 3px;
+      padding: 1px 3px;
+      text-align: center;
+      color: #fff;
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* SWATCHES */
+    .cv-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.8rem 0;
+    }
+
+    .cv-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .cv-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .cv-swatch:hover {
+      transform: scale(1.2);
+      border-color: var(--text);
+    }
+
+    .tw-color-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .tw-cat-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .tw-cat-pill.active,
+    .tw-cat-pill:hover {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Shared Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo" style="text-decoration: none;">
+        <div class="logo-icon">⚖️</div>
+        <div class="logo-text">
+          <span class="logo-en">Unit Calc</span>
+          <span class="logo-gu">એકમ કેલ્ક્યુલેટર</span>
+        </div>
+      </a>
+      <div class="header-controls">
+        <a href="pdf_merger.html" class="nav-link" title="Open PDF Tools" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.35);color:#8b5cf6;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(139,92,246,0.25)'" onmouseout="this.style.background='rgba(139,92,246,0.15)'"><span>📄</span> PDF Toolkit</a>
+        <a href="compiler.html" class="nav-link" title="Open Online Compiler" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.25)'" onmouseout="this.style.background='rgba(16,185,129,0.15)'"><span>💻</span> Compiler</a>
+        <a href="color_viewer.html" class="nav-link" title="Color Viewer" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(236,72,153,0.25);border:1px solid rgba(236,72,153,0.5);color:#ec4899;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;"><span>🎨</span> Color Viewer</a>
+        <a href="qr_connect.html" class="nav-link" title="Open QR Connect" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.35);color:#06b6d4;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.25)'" onmouseout="this.style.background='rgba(6,182,212,0.15)'"><span>📱</span> QR Connect</a>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" style="padding-top:2rem;padding-bottom:1.5rem;">
+    <div class="hero-badge">TailwindCSS · Preview · Convert · Harmonies</div>
+    <h1 class="hero-title" style="font-size:clamp(2rem,5vw,3rem);margin-bottom:0.5rem;">🎨 <span class="gradient-text">Color Viewer & Converter</span></h1>
+    <p class="hero-subtitle">Input color names, HEX, RGB, HSL, CMYK, or TailwindCSS classes. Instant live preview & conversion.</p>
+  </section>
+
+  <!-- Main Card -->
+  <section class="color-viewer-section">
+    <div class="cv-card">
+      <div class="cv-header-bar">
+        <h2><span>🎨</span> Universal Color Studio</h2>
+        <div class="cv-tabs">
+          <button class="cv-tab-btn active" id="tab-inspector" onclick="switchCvTab('inspector')">Inspector</button>
+          <button class="cv-tab-btn" id="tab-converter" onclick="switchCvTab('converter')">Converter Stage</button>
+          <button class="cv-tab-btn" id="tab-shades" onclick="switchCvTab('shades')">Shades & Tints</button>
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="cv-input-row">
+        <div class="cv-input-wrapper">
+          <input type="text" id="colorInput" class="cv-input" placeholder="e.g. bg-indigo-500, #8b5cf6, rgb(139,92,246), coral, cmyk(44,63,0,3)…" autocomplete="off" value="#8b5cf6" />
+          <input type="color" id="nativeColorPicker" class="cv-color-picker-input" value="#8b5cf6" title="Choose color" />
+        </div>
+        <button id="showColorBtn" class="cv-btn"><span>🔍</span> Inspect Color</button>
+        <button id="randomColorBtn" class="cv-btn cv-btn-secondary" title="Random Color"><span>🎲</span> Random</button>
+        <button id="eyeDropperBtn" class="cv-btn cv-btn-secondary" title="Pick color from screen" style="display:none;"><span>💉</span> Pick</button>
+      </div>
+      <p id="errorMessage" class="cv-error"></p>
+
+      <!-- VIEW 1: INSPECTOR -->
+      <div id="view-inspector">
+        <!-- Preview & Quick Contrast -->
+        <div class="cv-preview-container">
+          <div id="colorPreview" class="cv-preview">
+            <span class="cv-preview-badge" id="previewLabel">#8B5CF6</span>
+            <div class="cv-preview-contrast-sample">
+              <span id="contrastLightSample" style="background:rgba(255,255,255,0.85); color:#000;">Light Text</span>
+              <span id="contrastDarkSample" style="background:rgba(0,0,0,0.75); color:#fff;">Dark Text</span>
+            </div>
+          </div>
+          <div class="cv-quick-stats">
+            <div class="cv-stat-card">
+              <span class="cv-stat-title">Luminance</span>
+              <span class="cv-stat-val" id="statLuminance">23.4%</span>
+            </div>
+            <div class="cv-stat-card">
+              <span class="cv-stat-title">Contrast (White)</span>
+              <span class="cv-stat-val" id="statContrastWhite">3.7:1 <span class="badge-fail">AA Large</span></span>
+            </div>
+            <div class="cv-stat-card">
+              <span class="cv-stat-title">Contrast (Black)</span>
+              <span class="cv-stat-val" id="statContrastBlack">5.6:1 <span class="badge-pass">AA Pass</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Codes & Values Grid -->
+        <div class="cv-info-grid">
+          <div class="cv-info-box" id="box-name" title="Click to copy name">
+            <span class="cv-info-label">Name <span class="cv-copy-hint">copy</span></span>
+            <span class="cv-info-value" id="colorName">Violet</span>
+          </div>
+          <div class="cv-info-box" id="box-hex" title="Click to copy HEX">
+            <span class="cv-info-label">HEX <span class="cv-copy-hint">copy</span></span>
+            <span class="cv-info-value" id="hexValue">#8B5CF6</span>
+          </div>
+          <div class="cv-info-box" id="box-rgb" title="Click to copy RGB">
+            <span class="cv-info-label">RGB <span class="cv-copy-hint">copy</span></span>
+            <span class="cv-info-value" id="rgbValue">rgb(139, 92, 246)</span>
+          </div>
+          <div class="cv-info-box" id="box-hsl" title="Click to copy HSL">
+            <span class="cv-info-label">HSL <span class="cv-copy-hint">copy</span></span>
+            <span class="cv-info-value" id="hslValue">hsl(258, 90%, 66%)</span>
+          </div>
+          <div class="cv-info-box" id="box-hsv" title="Click to copy HSV">
+            <span class="cv-info-label">HSV / HSB <span class="cv-copy-hint">copy</span></span>
+            <span class="cv-info-value" id="hsvValue">hsv(258, 63%, 96%)</span>
+          </div>
+          <div class="cv-info-box" id="box-cmyk" title="Click to copy CMYK">
+            <span class="cv-info-label">CMYK <span class="cv-copy-hint">copy</span></span>
+            <span class="cv-info-value" id="cmykValue">cmyk(43, 63, 0, 4)</span>
+          </div>
+        </div>
+
+        <!-- Tailwind Output Card -->
+        <div class="tailwind-card">
+          <div class="tw-header">
+            <div class="tw-title"><span>⚡</span> TailwindCSS Classes</div>
+            <span id="twMatchBadge" style="font-size:0.75rem; color:var(--accent2); font-weight:600;">Exact / Nearest: violet-500</span>
+          </div>
+          <div class="tw-classes-grid">
+            <div class="tw-item" onclick="copyText(document.getElementById('twBgClass').textContent)">
+              <div>
+                <div class="tw-tag">Background</div>
+                <div class="tw-code" id="twBgClass">bg-violet-500</div>
+              </div>
+              <span class="cv-copy-hint" style="opacity:1;">📋</span>
+            </div>
+            <div class="tw-item" onclick="copyText(document.getElementById('twTextClass').textContent)">
+              <div>
+                <div class="tw-tag">Text</div>
+                <div class="tw-code" id="twTextClass">text-violet-500</div>
+              </div>
+              <span class="cv-copy-hint" style="opacity:1;">📋</span>
+            </div>
+            <div class="tw-item" onclick="copyText(document.getElementById('twBorderClass').textContent)">
+              <div>
+                <div class="tw-tag">Border</div>
+                <div class="tw-code" id="twBorderClass">border-violet-500</div>
+              </div>
+              <span class="cv-copy-hint" style="opacity:1;">📋</span>
+            </div>
+            <div class="tw-item" onclick="copyText(document.getElementById('twArbitrary').textContent)">
+              <div>
+                <div class="tw-tag">Arbitrary Value</div>
+                <div class="tw-code" id="twArbitrary">bg-[#8b5cf6]</div>
+              </div>
+              <span class="cv-copy-hint" style="opacity:1;">📋</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: CONVERTER STAGE -->
+      <div id="view-converter" style="display:none;">
+        <div class="convert-section">
+          <div style="font-size:0.9rem; font-weight:700; margin-bottom:1rem; color:var(--accent);">
+            🔄 Real-time Multi-Format Converter Stage
+          </div>
+          <div class="convert-grid">
+            <div class="convert-col">
+              <span class="convert-label">From Format</span>
+              <select id="convertFromFormat" class="convert-select" onchange="runConverterStage()">
+                <option value="auto">Auto Detect</option>
+                <option value="hex">HEX (#8b5cf6)</option>
+                <option value="rgb">RGB (139, 92, 246)</option>
+                <option value="hsl">HSL (258, 90%, 66%)</option>
+                <option value="cmyk">CMYK (43, 63, 0, 4)</option>
+                <option value="tailwind">Tailwind Class (bg-violet-500)</option>
+                <option value="name">Color Name (violet)</option>
+              </select>
+              <input type="text" id="convertInputVal" class="cv-input" placeholder="Type color..." value="#8b5cf6" style="margin-top:0.4rem;" oninput="runConverterStage()" />
+            </div>
+
+            <div class="convert-col">
+              <span class="convert-label">Target Conversion Result</span>
+              <select id="convertToFormat" class="convert-select" onchange="runConverterStage()">
+                <option value="all">All Formats</option>
+                <option value="hex">HEX</option>
+                <option value="rgb">RGB</option>
+                <option value="hsl">HSL</option>
+                <option value="cmyk">CMYK</option>
+                <option value="tailwind">Tailwind Class</option>
+                <option value="name">Color Name</option>
+              </select>
+              <div id="convertResultBox" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem 1rem;font-family:'Fira Code',monospace;font-size:0.95rem;font-weight:700;color:var(--accent2);display:flex;justify-content:space-between;align-items:center;min-height:46px;margin-top:0.4rem;cursor:pointer;" onclick="copyText(this.innerText)">
+                <span>bg-violet-500</span> <span>📋</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive RGB / HSL Sliders -->
+          <div style="margin-top:1.5rem; padding-top:1.2rem; border-top:1px solid var(--border);">
+            <span class="convert-label">Fine Tune Sliders</span>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:0.75rem;">
+              <div>
+                <div class="slider-row"><label style="color:#ef4444;">R</label><input type="range" id="sliderR" min="0" max="255" value="139" oninput="onRgbSliderChange()"><span id="valR">139</span></div>
+                <div class="slider-row"><label style="color:#22c55e;">G</label><input type="range" id="sliderG" min="0" max="255" value="92" oninput="onRgbSliderChange()"><span id="valG">92</span></div>
+                <div class="slider-row"><label style="color:#3b82f6;">B</label><input type="range" id="sliderB" min="0" max="255" value="246" oninput="onRgbSliderChange()"><span id="valB">246</span></div>
+              </div>
+              <div>
+                <div class="slider-row"><label style="color:#ec4899;">H</label><input type="range" id="sliderH" min="0" max="360" value="258" oninput="onHslSliderChange()"><span id="valH">258°</span></div>
+                <div class="slider-row"><label style="color:#06b6d4;">S</label><input type="range" id="sliderS" min="0" max="100" value="90" oninput="onHslSliderChange()"><span id="valS">90%</span></div>
+                <div class="slider-row"><label style="color:#f59e0b;">L</label><input type="range" id="sliderL" min="0" max="100" value="66" oninput="onHslSliderChange()"><span id="valL">66%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: SHADES & TINTS -->
+      <div id="view-shades" style="display:none;">
+        <div class="shades-title">
+          <span>Tailwind-Style 50-950 Shade Scale</span>
+          <span style="font-size:0.72rem;color:var(--text-muted);">Click any swatch to inspect</span>
+        </div>
+        <div class="shades-grid" id="tailwindShadesGrid"></div>
+
+        <div class="shades-title" style="margin-top:1.5rem;">
+          <span>Color Harmonies</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.75rem;" id="harmoniesContainer"></div>
+      </div>
+
+      <!-- Quick Swatches & Tailwind Presets -->
+      <div class="cv-divider"></div>
+      <div class="shades-title">
+        <span>Tailwind Color Palette Presets</span>
+      </div>
+      <div class="tw-color-categories" id="twCategories"></div>
+      <div class="cv-swatches" id="swatches"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Made with ❤️ for Gujarat &nbsp;|&nbsp; <strong>Unit Calculator</strong> &nbsp;|&nbsp; PDF &middot; Compiler &middot; Color Viewer &middot; QR Connect</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const savedTheme = localStorage.getItem('unitcalc_theme') || 'dark';
+    if (savedTheme === 'light') { document.body.classList.add('light'); themeToggle.textContent = '☀️'; }
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light');
+      const isLight = document.body.classList.contains('light');
+      themeToggle.textContent = isLight ? '☀️' : '🌙';
+      localStorage.setItem('unitcalc_theme', isLight ? 'light' : 'dark');
+    });
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    function copyText(text) {
+      if (!text || text === '—') return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast(`Copied "${text}"`));
+      } else {
+        const ta = document.createElement('textarea'); ta.value = text;
+        ta.style.cssText = 'position:fixed;top:-9999px'; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+        showToast(`Copied "${text}"`);
+      }
+    }
+
+    // EyeDropper API
+    const eyeDropperBtn = document.getElementById('eyeDropperBtn');
+    if (window.EyeDropper) {
+      eyeDropperBtn.style.display = 'inline-flex';
+      eyeDropperBtn.addEventListener('click', async () => {
+        try {
+          const eyeDropper = new EyeDropper();
+          const result = await eyeDropper.open();
+          if (result && result.sRGBHex) {
+            colorInput.value = result.sRGBHex;
+            showColor();
+          }
+        } catch (e) {}
+      });
+    }
+
+    // Tailwind Palette Dictionary
+    const TAILWIND_COLORS = {
+      slate: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a', 950: '#020617' },
+      gray: { 50: '#f9fafb', 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db', 400: '#9ca3af', 500: '#6b7280', 600: '#4b5563', 700: '#374151', 800: '#1f2937', 900: '#111827', 950: '#030712' },
+      zinc: { 50: '#fafafa', 100: '#f4f4f5', 200: '#e4e4e7', 300: '#d4d4d8', 400: '#a1a1aa', 500: '#71717a', 600: '#52525b', 700: '#3f3f46', 800: '#27272a', 900: '#18181b', 950: '#09090b' },
+      red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' },
+      orange: { 50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa', 300: '#fdba74', 400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 900: '#7c2d12', 950: '#431407' },
+      amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f', 950: '#451a03' },
+      yellow: { 50: '#fefce8', 100: '#fef9c3', 200: '#fef08a', 300: '#fde047', 400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207', 800: '#854d0e', 900: '#713f12', 950: '#422006' },
+      lime: { 50: '#f7fee7', 100: '#ecfccb', 200: '#d9f99d', 300: '#bef264', 400: '#a3e635', 500: '#84cc16', 600: '#65a30d', 700: '#4d7c0f', 800: '#3f6212', 900: '#365314', 950: '#1a2e05' },
+      green: { 50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0', 300: '#86efac', 400: '#4ade80', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d', 950: '#052e16' },
+      emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' },
+      teal: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4', 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59', 900: '#134e4a', 950: '#042f2e' },
+      cyan: { 50: '#ecfeff', 100: '#cffafe', 200: '#a5f3fc', 300: '#67e8f9', 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2', 700: '#0e7490', 800: '#155e75', 900: '#164e63', 950: '#083344' },
+      sky: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
+      blue: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a', 950: '#172554' },
+      indigo: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b' },
+      violet: { 50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd', 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9', 800: '#5b21b6', 900: '#4c1d95', 950: '#2e1065' },
+      purple: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87', 950: '#3b0764' },
+      fuchsia: { 50: '#fdf4ff', 100: '#fae8ff', 200: '#f5d0fe', 300: '#f0abfc', 400: '#e879f9', 500: '#d946ef', 600: '#c026d3', 700: '#a21caf', 800: '#86198f', 900: '#701a75', 950: '#4a044e' },
+      pink: { 50: '#fdf2f8', 100: '#fce7f3', 200: '#fbcfe8', 300: '#f9a8d4', 400: '#f472b6', 500: '#ec4899', 600: '#db2777', 700: '#be185d', 800: '#9d174d', 900: '#831843', 950: '#500724' },
+      rose: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c', 800: '#9f1239', 900: '#881337', 950: '#4c0519' }
+    };
+
+    // Flatten Tailwind colors for search
+    const TW_FLAT = [];
+    Object.entries(TAILWIND_COLORS).forEach(([family, shades]) => {
+      Object.entries(shades).forEach(([shade, hex]) => {
+        TW_FLAT.push({ family, shade, name: `${family}-${shade}`, hex, rgb: hexToRgb(hex) });
+      });
+    });
+
+    // Color conversion math helpers
+    function hexToRgb(hex) {
+      hex = hex.replace(/^#/, '');
+      if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+      if (hex.length === 6) {
+        const num = parseInt(hex, 16);
+        return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255, a: 1 };
+      }
+      return null;
+    }
+
+    function rgbToHex(r, g, b) {
+      return '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+    }
+
+    function hslToRgb(h, s, l) {
+      h /= 360; s /= 100; l /= 100;
+      let r, g, b;
+      if (s === 0) {
+        r = g = b = l;
+      } else {
+        const hue2rgb = (p, q, t) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+      }
+      return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+    }
+
+    function rgbToHsv(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0, v = max;
+      const d = max - min;
+      s = max === 0 ? 0 : d / max;
+      if (max !== min) {
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
+    }
+
+    function rgbToCmyk(r, g, b) {
+      let c = 1 - (r / 255), m = 1 - (g / 255), y = 1 - (b / 255), k = Math.min(c, m, y);
+      if (k === 1) return { c: 0, m: 0, y: 0, k: 100 };
+      c = Math.round(((c - k) / (1 - k)) * 100);
+      m = Math.round(((m - k) / (1 - k)) * 100);
+      y = Math.round(((y - k) / (1 - k)) * 100);
+      k = Math.round(k * 100);
+      return { c, m, y, k };
+    }
+
+    function cmykToRgb(c, m, y, k) {
+      c /= 100; m /= 100; y /= 100; k /= 100;
+      const r = Math.round(255 * (1 - c) * (1 - k));
+      const g = Math.round(255 * (1 - m) * (1 - k));
+      const b = Math.round(255 * (1 - y) * (1 - k));
+      return { r, g, b };
+    }
+
+    // Color distance for closest match
+    function colorDistance(rgb1, rgb2) {
+      return Math.sqrt(Math.pow(rgb1.r - rgb2.r, 2) + Math.pow(rgb1.g - rgb2.g, 2) + Math.pow(rgb1.b - rgb2.b, 2));
+    }
+
+    function findClosestTailwind(rgb) {
+      let best = null;
+      let minD = Infinity;
+      for (const item of TW_FLAT) {
+        const d = colorDistance(rgb, item.rgb);
+        if (d < minD) {
+          minD = d;
+          best = item;
+          if (d === 0) break;
+        }
+      }
+      return { ...best, exact: minD === 0, distance: minD };
+    }
+
+    // Parsing universal color input (supports named, hex, rgb, hsl, cmyk, tailwind, etc.)
+    function parseUniversalColor(raw) {
+      if (!raw) return null;
+      raw = raw.trim();
+
+      // Check Tailwind class input like bg-indigo-500, text-emerald-400, border-rose-600, or emerald-500
+      let twClean = raw.toLowerCase().replace(/^(bg-|text-|border-|ring-|from-|to-)/, '').trim();
+      const twParts = twClean.split('-');
+      if (twParts.length === 2 && TAILWIND_COLORS[twParts[0]] && TAILWIND_COLORS[twParts[0]][twParts[1]]) {
+        const hex = TAILWIND_COLORS[twParts[0]][twParts[1]];
+        const rgb = hexToRgb(hex);
+        return { rgb, hex, name: `${twParts[0]}-${twParts[1]} (Tailwind)`, source: 'tailwind' };
+      }
+
+      // Check CMYK syntax like cmyk(43, 63, 0, 4)
+      const cmykMatch = raw.match(/cmyk\s*\(\s*(\d+)\s*[%,,\s]\s*(\d+)\s*[%,,\s]\s*(\d+)\s*[%,,\s]\s*(\d+)\s*%?\)/i);
+      if (cmykMatch) {
+        const rgb = cmykToRgb(+cmykMatch[1], +cmykMatch[2], +cmykMatch[3], +cmykMatch[4]);
+        return { rgb, hex: rgbToHex(rgb.r, rgb.g, rgb.b), name: 'CMYK Color', source: 'cmyk' };
+      }
+
+      // Standard CSS parsing via DOM probe
+      const probe = document.createElement('div');
+      probe.style.color = raw;
+      if (probe.style.color === '') return null;
+      document.body.appendChild(probe);
+      const computed = window.getComputedStyle(probe).color;
+      probe.remove();
+      const m = computed.match(/\d+/g);
+      if (!m || m.length < 3) return null;
+      const rgb = { r: +m[0], g: +m[1], b: +m[2] };
+      const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+      return { rgb, hex, name: raw, source: 'css' };
+    }
+
+    // DOM Elements
+    const colorInput = document.getElementById('colorInput');
+    const showColorBtn = document.getElementById('showColorBtn');
+    const randomColorBtn = document.getElementById('randomColorBtn');
+    const nativeColorPicker = document.getElementById('nativeColorPicker');
+    const colorPreview = document.getElementById('colorPreview');
+    const previewLabel = document.getElementById('previewLabel');
+    const errorMessage = document.getElementById('errorMessage');
+
+    const colorName = document.getElementById('colorName');
+    const hexValue = document.getElementById('hexValue');
+    const rgbValue = document.getElementById('rgbValue');
+    const hslValue = document.getElementById('hslValue');
+    const hsvValue = document.getElementById('hsvValue');
+    const cmykValue = document.getElementById('cmykValue');
+
+    const statLuminance = document.getElementById('statLuminance');
+    const statContrastWhite = document.getElementById('statContrastWhite');
+    const statContrastBlack = document.getElementById('statContrastBlack');
+
+    const twBgClass = document.getElementById('twBgClass');
+    const twTextClass = document.getElementById('twTextClass');
+    const twBorderClass = document.getElementById('twBorderClass');
+    const twArbitrary = document.getElementById('twArbitrary');
+    const twMatchBadge = document.getElementById('twMatchBadge');
+
+    let currentColor = { r: 139, g: 92, b: 246, hex: '#8B5CF6' };
+
+    function calculateLuminance(r, g, b) {
+      const a = [r, g, b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+    }
+
+    function calculateContrast(lum1, lum2) {
+      const brightest = Math.max(lum1, lum2);
+      const darkest = Math.min(lum1, lum2);
+      return (brightest + 0.05) / (darkest + 0.05);
+    }
+
+    function showColor() {
+      const input = colorInput.value.trim();
+      if (!input) {
+        errorMessage.textContent = 'Please enter a color value or Tailwind class.';
+        return;
+      }
+      const parsed = parseUniversalColor(input);
+      if (!parsed) {
+        errorMessage.textContent = 'Invalid color format. Try #8b5cf6, rgb(139,92,246), bg-emerald-500, or coral.';
+        return;
+      }
+      errorMessage.textContent = '';
+      updateColorDisplay(parsed.rgb.r, parsed.rgb.g, parsed.rgb.b);
+    }
+
+    function updateColorDisplay(r, g, b) {
+      const hex = rgbToHex(r, g, b);
+      const hsl = rgbToHsl(r, g, b);
+      const hsv = rgbToHsv(r, g, b);
+      const cmyk = rgbToCmyk(r, g, b);
+      currentColor = { r, g, b, hex, hsl, hsv, cmyk };
+
+      // Update Native Picker & Input
+      nativeColorPicker.value = hex;
+      colorPreview.style.backgroundColor = hex;
+      previewLabel.textContent = hex;
+
+      // Contrast & Text Luminance
+      const lum = calculateLuminance(r, g, b);
+      const lumPct = (lum * 100).toFixed(1);
+      statLuminance.textContent = `${lumPct}%`;
+
+      const contrastWhite = calculateContrast(lum, 1.0);
+      const contrastBlack = calculateContrast(lum, 0.0);
+
+      const getBadge = (c) => {
+        if (c >= 7) return `<span class="badge-pass">AAA Pass (${c.toFixed(1)}:1)</span>`;
+        if (c >= 4.5) return `<span class="badge-pass">AA Pass (${c.toFixed(1)}:1)</span>`;
+        if (c >= 3.0) return `<span class="badge-fail">AA Large (${c.toFixed(1)}:1)</span>`;
+        return `<span class="badge-fail">Fail (${c.toFixed(1)}:1)</span>`;
+      };
+
+      statContrastWhite.innerHTML = getBadge(contrastWhite);
+      statContrastBlack.innerHTML = getBadge(contrastBlack);
+
+      // Contrast preview label color
+      previewLabel.style.color = lum > 0.4 ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)';
+
+      // Codes
+      const twMatch = findClosestTailwind({ r, g, b });
+      colorName.textContent = twMatch.exact ? `${twMatch.family} (Tailwind)` : (getColorName(hex) || `${twMatch.family}-${twMatch.shade}`);
+      hexValue.textContent = hex;
+      rgbValue.textContent = `rgb(${r}, ${g}, ${b})`;
+      hslValue.textContent = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+      hsvValue.textContent = `hsv(${hsv.h}, ${hsv.s}%, ${hsv.v}%)`;
+      cmykValue.textContent = `cmyk(${cmyk.c}, ${cmyk.m}, ${cmyk.y}, ${cmyk.k})`;
+
+      // Tailwind Output
+      twBgClass.textContent = `bg-${twMatch.name}`;
+      twTextClass.textContent = `text-${twMatch.name}`;
+      twBorderClass.textContent = `border-${twMatch.name}`;
+      twArbitrary.textContent = `bg-[${hex.toLowerCase()}]`;
+      twMatchBadge.textContent = twMatch.exact ? `Exact: ${twMatch.name}` : `Nearest (${Math.round((1 - twMatch.distance/441)*100)}% match): ${twMatch.name}`;
+
+      // Update Sliders
+      document.getElementById('sliderR').value = r; document.getElementById('valR').textContent = r;
+      document.getElementById('sliderG').value = g; document.getElementById('valG').textContent = g;
+      document.getElementById('sliderB').value = b; document.getElementById('valB').textContent = b;
+      document.getElementById('sliderH').value = hsl.h; document.getElementById('valH').textContent = `${hsl.h}°`;
+      document.getElementById('sliderS').value = hsl.s; document.getElementById('valS').textContent = `${hsl.s}%`;
+      document.getElementById('sliderL').value = hsl.l; document.getElementById('valL').textContent = `${hsl.l}%`;
+
+      // Update Conversion Stage Box
+      runConverterStage();
+
+      // Update Shades and Harmonies
+      renderShades(hsl);
+      renderHarmonies(hsl);
+    }
+
+    // Sliders Handlers
+    function onRgbSliderChange() {
+      const r = +document.getElementById('sliderR').value;
+      const g = +document.getElementById('sliderG').value;
+      const b = +document.getElementById('sliderB').value;
+      colorInput.value = rgbToHex(r, g, b);
+      updateColorDisplay(r, g, b);
+    }
+
+    function onHslSliderChange() {
+      const h = +document.getElementById('sliderH').value;
+      const s = +document.getElementById('sliderS').value;
+      const l = +document.getElementById('sliderL').value;
+      const rgb = hslToRgb(h, s, l);
+      colorInput.value = rgbToHex(rgb.r, rgb.g, rgb.b);
+      updateColorDisplay(rgb.r, rgb.g, rgb.b);
+    }
+
+    // Conversion Stage Engine
+    function runConverterStage() {
+      const target = document.getElementById('convertToFormat').value;
+      const resultBox = document.getElementById('convertResultBox');
+      const { r, g, b, hex, hsl, cmyk } = currentColor;
+      const tw = findClosestTailwind({ r, g, b });
+
+      let out = '';
+      if (target === 'hex') out = hex;
+      else if (target === 'rgb') out = `rgb(${r}, ${g}, ${b})`;
+      else if (target === 'hsl') out = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+      else if (target === 'cmyk') out = `cmyk(${cmyk.c}, ${cmyk.m}, ${cmyk.y}, ${cmyk.k})`;
+      else if (target === 'tailwind') out = `bg-${tw.name}`;
+      else if (target === 'name') out = colorName.textContent;
+      else {
+        out = `${hex} | rgb(${r},${g},${b}) | bg-${tw.name}`;
+      }
+      resultBox.innerHTML = `<span>${out}</span> <span>📋</span>`;
+    }
+
+    // Generate Tailwind-like 50-950 Shades
+    function renderShades(hsl) {
+      const container = document.getElementById('tailwindShadesGrid');
+      container.innerHTML = '';
+      const lightnessMap = [
+        { label: '50', l: 96 }, { label: '100', l: 90 }, { label: '200', l: 80 },
+        { label: '300', l: 70 }, { label: '400', l: 60 }, { label: '500', l: 50 },
+        { label: '600', l: 40 }, { label: '700', l: 30 }, { label: '800', l: 20 },
+        { label: '900', l: 12 }, { label: '950', l: 6 }
+      ];
+
+      lightnessMap.forEach(item => {
+        const rgb = hslToRgb(hsl.h, hsl.s, item.l);
+        const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+        const box = document.createElement('div');
+        box.className = 'shade-box';
+        box.style.backgroundColor = hex;
+        box.title = `${item.label}: ${hex}`;
+        box.innerHTML = `<span class="shade-label">${item.label}</span>`;
+        box.addEventListener('click', () => {
+          colorInput.value = hex;
+          showColor();
+        });
+        container.appendChild(box);
+      });
+    }
+
+    // Color Harmonies
+    function renderHarmonies(hsl) {
+      const container = document.getElementById('harmoniesContainer');
+      container.innerHTML = '';
+
+      const harmonyTypes = [
+        { name: 'Complementary', angles: [180] },
+        { name: 'Analogous', angles: [-30, 30] },
+        { name: 'Triadic', angles: [120, 240] },
+        { name: 'Split Comp.', angles: [150, 210] }
+      ];
+
+      harmonyTypes.forEach(h => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:0.75rem;';
+        
+        let swatchesHtml = `<div style="display:flex;gap:4px;margin-top:6px;">`;
+        swatchesHtml += `<div style="flex:1;height:32px;background:${currentColor.hex};border-radius:4px;cursor:pointer;" title="Base: ${currentColor.hex}"></div>`;
+
+        h.angles.forEach(angle => {
+          const newH = (hsl.h + angle + 360) % 360;
+          const rgb = hslToRgb(newH, hsl.s, hsl.l);
+          const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+          swatchesHtml += `<div style="flex:1;height:32px;background:${hex};border-radius:4px;cursor:pointer;" title="${hex}" onclick="colorInput.value='${hex}';showColor();"></div>`;
+        });
+        swatchesHtml += `</div>`;
+
+        card.innerHTML = `<div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">${h.name}</div>${swatchesHtml}`;
+        container.appendChild(card);
+      });
+    }
+
+    function getColorName(hex) {
+      const names = {
+        '#FF0000':'Red','#00FF00':'Lime','#0000FF':'Blue','#FFFF00':'Yellow','#FFA500':'Orange','#800080':'Purple',
+        '#FFC0CB':'Pink','#000000':'Black','#FFFFFF':'White','#808080':'Gray','#A52A2A':'Brown','#00FFFF':'Cyan',
+        '#FF00FF':'Magenta','#000080':'Navy','#008080':'Teal','#800000':'Maroon','#808000':'Olive','#FFD700':'Gold',
+        '#C0C0C0':'Silver','#FF7F50':'Coral','#FA8072':'Salmon','#4B0082':'Indigo','#EE82EE':'Violet','#DC143C':'Crimson',
+        '#40E0D0':'Turquoise','#F0E68C':'Khaki','#E6E6FA':'Lavender','#F5F5DC':'Beige','#8B5CF6':'Violet-500'
+      };
+      return names[hex.toUpperCase()] || null;
+    }
+
+    // Tabs switching
+    function switchCvTab(tab) {
+      document.getElementById('tab-inspector').classList.toggle('active', tab === 'inspector');
+      document.getElementById('tab-converter').classList.toggle('active', tab === 'converter');
+      document.getElementById('tab-shades').classList.toggle('active', tab === 'shades');
+
+      document.getElementById('view-inspector').style.display = tab === 'inspector' ? 'block' : 'none';
+      document.getElementById('view-converter').style.display = tab === 'converter' ? 'block' : 'none';
+      document.getElementById('view-shades').style.display = tab === 'shades' ? 'block' : 'none';
+    }
+
+    // Event listeners
+    showColorBtn.addEventListener('click', showColor);
+    colorInput.addEventListener('keydown', e => { if (e.key === 'Enter') showColor(); });
+    nativeColorPicker.addEventListener('input', e => {
+      colorInput.value = e.target.value;
+      showColor();
+    });
+
+    randomColorBtn.addEventListener('click', () => {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      colorInput.value = rgbToHex(r, g, b);
+      showColor();
+    });
+
+    // Copy boxes
+    document.getElementById('box-name').addEventListener('click', () => copyText(colorName.textContent));
+    document.getElementById('box-hex').addEventListener('click', () => copyText(hexValue.textContent));
+    document.getElementById('box-rgb').addEventListener('click', () => copyText(rgbValue.textContent));
+    document.getElementById('box-hsl').addEventListener('click', () => copyText(hslValue.textContent));
+    document.getElementById('box-hsv').addEventListener('click', () => copyText(hsvValue.textContent));
+    document.getElementById('box-cmyk').addEventListener('click', () => copyText(cmykValue.textContent));
+
+    // Preset Swatches & Tailwind Category Pills
+    const twCategories = document.getElementById('twCategories');
+    const swatchesContainer = document.getElementById('swatches');
+
+    Object.keys(TAILWIND_COLORS).slice(0, 12).forEach((cat, idx) => {
+      const pill = document.createElement('button');
+      pill.className = `tw-cat-pill ${idx === 0 ? 'active' : ''}`;
+      pill.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.tw-cat-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        renderCategorySwatches(cat);
+      });
+      twCategories.appendChild(pill);
+    });
+
+    function renderCategorySwatches(cat) {
+      swatchesContainer.innerHTML = '';
+      Object.entries(TAILWIND_COLORS[cat] || {}).forEach(([shade, hex]) => {
+        const btn = document.createElement('button');
+        btn.className = 'cv-swatch';
+        btn.style.backgroundColor = hex;
+        btn.title = `${cat}-${shade}: ${hex}`;
+        btn.addEventListener('click', () => {
+          colorInput.value = `bg-${cat}-${shade}`;
+          showColor();
+        });
+        swatchesContainer.appendChild(btn);
+      });
+    }
+
+    // Init
+    renderCategorySwatches('slate');
+    showColor();
+  </script>
+</body>
+</html>

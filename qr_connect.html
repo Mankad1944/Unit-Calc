@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="QR Connect – Direct in-browser QR Generator, Live Camera Scanner, Wi-Fi & UPI QR Creator, and P2P Cross-Device Transfer. 100% Vanilla JS." />
+  <title>QR Connect | Unit Calc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Standalone QR Code Generation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Standalone QR Code Camera & File Scanner Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <!-- Optional PeerJS for P2P Device-to-Device WebRTC Live Sync -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <style>
+    .qr-section {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 1.25rem 4rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .qr-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.2rem;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.6s ease both;
+      margin-bottom: 2rem;
+    }
+
+    .qr-nav-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .qr-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.6rem 1.4rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .qr-tab-btn.active {
+      background: var(--accent-grd);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
+    }
+
+    /* GENERATOR LAYOUT */
+    .qr-gen-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 820px) {
+      .qr-gen-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* TYPE PILLS */
+    .qr-type-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .qr-type-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.9rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .qr-type-pill:hover,
+    .qr-type-pill.active {
+      background: rgba(6, 182, 212, 0.15);
+      border-color: var(--accent2);
+      color: var(--text);
+    }
+
+    .qr-type-pill.active {
+      background: var(--accent2);
+      color: #000;
+      font-weight: 700;
+    }
+
+    .qr-form-group {
+      margin-bottom: 1rem;
+    }
+
+    .qr-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .qr-input,
+    .qr-select,
+    .qr-textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      font-family: inherit;
+    }
+
+    body.light .qr-input,
+    body.light .qr-select,
+    body.light .qr-textarea {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .qr-input:focus,
+    .qr-select:focus,
+    .qr-textarea:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2);
+    }
+
+    .qr-custom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--border);
+    }
+
+    /* PREVIEW CARD */
+    .qr-preview-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .qr-code-box {
+      background: #ffffff;
+      padding: 18px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      margin-bottom: 1.5rem;
+      display: inline-block;
+      transition: transform 0.3s;
+    }
+
+    .qr-code-box:hover {
+      transform: scale(1.02);
+    }
+
+    .qr-code-box img,
+    .qr-code-box canvas {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .qr-action-btns {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .qr-btn {
+      background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 0.7rem 1.4rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .qr-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+    }
+
+    .qr-btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    .qr-btn-outline:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent2);
+    }
+
+    /* SCANNER VIEW */
+    .qr-scanner-box {
+      max-width: 500px;
+      margin: 0 auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.5);
+      position: relative;
+    }
+
+    #reader {
+      width: 100%;
+      border: none !important;
+    }
+
+    .qr-scan-result {
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+      word-break: break-all;
+    }
+
+    /* P2P LIVE CONNECT VIEW */
+    .p2p-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .p2p-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .p2p-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.5rem;
+    }
+
+    .p2p-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(244, 63, 94, 0.15);
+      color: #f43f5e;
+    }
+
+    .p2p-status-pill.connected {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    /* HISTORY LIST */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.2s;
+    }
+
+    .history-item:hover {
+      border-color: var(--accent2);
+      background: rgba(6, 182, 212, 0.06);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Shared Site Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo" style="text-decoration: none;">
+        <div class="logo-icon">⚖️</div>
+        <div class="logo-text">
+          <span class="logo-en">Unit Calc</span>
+          <span class="logo-gu">એકમ કેલ્ક્યુલેટર</span>
+        </div>
+      </a>
+      <div class="header-controls">
+        <a href="pdf_merger.html" class="nav-link" title="Open PDF Tools" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.35);color:#8b5cf6;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(139,92,246,0.25)'" onmouseout="this.style.background='rgba(139,92,246,0.15)'"><span>📄</span> PDF Toolkit</a>
+        <a href="compiler.html" class="nav-link" title="Open Online Compiler" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.25)'" onmouseout="this.style.background='rgba(16,185,129,0.15)'"><span>💻</span> Compiler</a>
+        <a href="color_viewer.html" class="nav-link" title="Open Color Viewer" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.35);color:#ec4899;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(236,72,153,0.25)'" onmouseout="this.style.background='rgba(236,72,153,0.15)'"><span>🎨</span> Color Viewer</a>
+        <a href="qr_connect.html" class="nav-link" title="QR Connect" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(6,182,212,0.25);border:1px solid rgba(6,182,212,0.5);color:#06b6d4;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;"><span>📱</span> QR Connect</a>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" style="padding-top:2rem;padding-bottom:1.5rem;">
+    <div class="hero-badge">Vanilla JS · Instant Launch · Generator & Scanner</div>
+    <h1 class="hero-title" style="font-size:clamp(2rem,5vw,3rem);margin-bottom:0.5rem;">📱 <span class="gradient-text">QR Connect</span></h1>
+    <p class="hero-subtitle">Direct browser-native QR generator, camera scanner, and cross-device sync. No server required.</p>
+  </section>
+
+  <!-- Main Section -->
+  <section class="qr-section">
+    <!-- Nav Tabs -->
+    <!-- <div class="qr-nav-tabs">
+      <button class="qr-tab-btn active" id="tab-gen" onclick="switchTab('gen')"><span>✨</span> QR Generator</button>
+      <button class="qr-tab-btn" id="tab-scan" onclick="switchTab('scan')"><span>📷</span> Live Camera Scanner</button>
+      <button class="qr-tab-btn" id="tab-p2p" onclick="switchTab('p2p')"><span>⚡</span> P2P Live Sync</button>
+      <button class="qr-tab-btn" id="tab-history" onclick="switchTab('history')"><span>📜</span> History (<span id="histCount">0</span>)</button>
+    </div> -->
+
+    <!-- VIEW 1: GENERATOR -->
+    <div id="view-gen" class="qr-card">
+      <div class="qr-type-pills">
+        <button class="qr-type-pill active" data-type="url" onclick="setQrType('url')">🔗 URL / Link</button>
+        <!-- <button class="qr-type-pill" data-type="text" onclick="setQrType('text')">📝 Text</button> -->
+        <!-- <button class="qr-type-pill" data-type="wifi" onclick="setQrType('wifi')">📶 Wi-Fi</button> -->
+        <button class="qr-type-pill" data-type="upi" onclick="setQrType('upi')">💳 UPI Payment</button>
+        <button class="qr-type-pill" data-type="vcard" onclick="setQrType('vcard')">👤 Contact Card</button>
+        <button class="qr-type-pill" data-type="email" onclick="setQrType('email')">✉️ Email</button>
+        <button class="qr-type-pill" data-type="whatsapp" onclick="setQrType('whatsapp')">💬 WhatsApp</button>
+      </div>
+
+      <div class="qr-gen-grid">
+        <!-- Form inputs -->
+        <div>
+          <!-- URL Form -->
+          <div id="form-url">
+            <div class="qr-form-group">
+              <label class="qr-label">Website URL</label>
+              <input type="url" id="inputUrl" class="qr-input" placeholder="https://example.com" value="https://google.com" oninput="generateQr()" />
+            </div>
+          </div>
+
+          <!-- Text Form -->
+          <div id="form-text" style="display:none;">
+            <div class="qr-form-group">
+              <label class="qr-label">Plain Text Content</label>
+              <textarea id="inputText" class="qr-textarea" rows="3" placeholder="Enter message or notes..." oninput="generateQr()">Hello from Unit Calc!</textarea>
+            </div>
+          </div>
+
+          <!-- Wi-Fi Form -->
+          <div id="form-wifi" style="display:none;">
+            <div class="qr-form-group">
+              <label class="qr-label">Network Name (SSID)</label>
+              <input type="text" id="wifiSsid" class="qr-input" placeholder="MyWiFiNetwork" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Password</label>
+              <input type="text" id="wifiPass" class="qr-input" placeholder="WiFi Password" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Encryption</label>
+              <select id="wifiType" class="qr-select" onchange="generateQr()">
+                <option value="WPA">WPA/WPA2</option>
+                <option value="WEP">WEP</option>
+                <option value="nopass">None (Open)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- UPI Form -->
+          <div id="form-upi" style="display:none;">
+            <div class="qr-form-group">
+              <label class="qr-label">UPI ID / VPA</label>
+              <input type="text" id="upiVpa" class="qr-input" placeholder="name@upi / 9876543210@paytm" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Payee Name</label>
+              <input type="text" id="upiName" class="qr-input" placeholder="Receiver Name" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Amount (₹ INR - Optional)</label>
+              <input type="number" id="upiAmount" class="qr-input" placeholder="e.g. 500" oninput="generateQr()" />
+            </div>
+          </div>
+
+          <!-- Contact vCard Form -->
+          <div id="form-vcard" style="display:none;">
+            <div class="qr-form-group">
+              <label class="qr-label">Full Name</label>
+              <input type="text" id="vcardName" class="qr-input" placeholder="John Doe" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Phone</label>
+              <input type="tel" id="vcardPhone" class="qr-input" placeholder="+91 9876543210" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Email</label>
+              <input type="email" id="vcardEmail" class="qr-input" placeholder="john@example.com" oninput="generateQr()" />
+            </div>
+          </div>
+
+          <!-- Email Form -->
+          <div id="form-email" style="display:none;">
+            <div class="qr-form-group">
+              <label class="qr-label">Email Address</label>
+              <input type="email" id="emailTo" class="qr-input" placeholder="recipient@example.com" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Subject</label>
+              <input type="text" id="emailSub" class="qr-input" placeholder="Subject line" oninput="generateQr()" />
+            </div>
+          </div>
+
+          <!-- WhatsApp Form -->
+          <div id="form-whatsapp" style="display:none;">
+            <div class="qr-form-group">
+              <label class="qr-label">Phone Number (with country code)</label>
+              <input type="text" id="waPhone" class="qr-input" placeholder="919876543210" oninput="generateQr()" />
+            </div>
+            <div class="qr-form-group">
+              <label class="qr-label">Pre-filled Message</label>
+              <input type="text" id="waMsg" class="qr-input" placeholder="Hi there!" oninput="generateQr()" />
+            </div>
+          </div>
+
+          <!-- Customization options -->
+          <div class="qr-custom-grid">
+            <div>
+              <label class="qr-label">QR Color</label>
+              <input type="color" id="qrColorDark" value="#000000" style="width:100%;height:38px;border-radius:6px;border:1px solid var(--border);cursor:pointer;background:transparent;" onchange="generateQr()" />
+            </div>
+            <div>
+              <label class="qr-label">Background</label>
+              <input type="color" id="qrColorLight" value="#ffffff" style="width:100%;height:38px;border-radius:6px;border:1px solid var(--border);cursor:pointer;background:transparent;" onchange="generateQr()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- QR Display Preview -->
+        <div class="qr-preview-wrapper">
+          <div class="qr-code-box" id="qrOutput"></div>
+          <div class="qr-action-btns">
+            <button class="qr-btn" onclick="downloadQr()"><span>📥</span> Download PNG</button>
+            <!-- <button class="qr-btn qr-btn-outline" onclick="saveToHistory()"><span>⭐</span> Save</button> -->
+            <button class="qr-btn qr-btn-outline" onclick="copyQrData()"><span>📋</span> Copy Link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: LIVE CAMERA SCANNER -->
+    <div id="view-scan" class="qr-card" style="display:none;">
+      <div style="text-align:center; margin-bottom:1.5rem;">
+        <h2 style="font-size:1.2rem; font-weight:700; color:var(--accent2); margin-bottom:0.4rem;">📷 Live Camera & File QR Scanner</h2>
+        <p style="font-size:0.88rem; color:var(--text-muted);">Point your device camera at any QR code, or upload an image file.</p>
+      </div>
+
+      <div style="display:flex; justify-content:center; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+        <button class="qr-btn" id="startCameraBtn" onclick="startCameraScanner()"><span>📹</span> Start Camera</button>
+        <button class="qr-btn qr-btn-outline" id="stopCameraBtn" onclick="stopCameraScanner()" style="display:none;"><span>⏹️</span> Stop Camera</button>
+        <label class="qr-btn qr-btn-outline" style="cursor:pointer;">
+          <span>🖼️</span> Scan Image File
+          <input type="file" id="qrFileInput" accept="image/*" style="display:none;" onchange="scanImageFile(event)" />
+        </label>
+      </div>
+
+      <div class="qr-scanner-box">
+        <div id="reader"></div>
+      </div>
+
+      <div id="scanResultContainer" class="qr-scan-result" style="display:none;">
+        <div style="font-size:0.75rem; font-weight:700; color:var(--accent2); text-transform:uppercase; margin-bottom:0.4rem;">Scan Result:</div>
+        <div id="scanResultText" style="font-family:'Fira Code',monospace; font-size:0.95rem; margin-bottom:0.8rem;"></div>
+        <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+          <button class="qr-btn" onclick="copyText(document.getElementById('scanResultText').textContent)"><span>📋</span> Copy Text</button>
+          <a id="scanOpenLink" href="#" target="_blank" class="qr-btn qr-btn-outline" style="display:none; text-decoration:none;"><span>🌐</span> Open URL</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: P2P LIVE SYNC -->
+    <div id="view-p2p" class="qr-card" style="display:none;">
+      <div style="text-align:center; margin-bottom:1.5rem;">
+        <h2 style="font-size:1.2rem; font-weight:700; color:var(--accent); margin-bottom:0.4rem;">⚡ Direct Device-to-Device WebRTC Sync</h2>
+        <p style="font-size:0.88rem; color:var(--text-muted);">Transfer notes, links, and messages in real-time between your phone and PC without any login.</p>
+      </div>
+
+      <div class="p2p-container">
+        <!-- My Device Card -->
+        <div class="p2p-card" style="text-align:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <span style="font-size:0.85rem; font-weight:700; text-transform:uppercase; color:var(--text-muted);">This Device</span>
+            <span id="p2pStatus" class="p2p-status-pill">Ready to Pair</span>
+          </div>
+          <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.8rem;">Scan this QR code from your other device to connect:</div>
+          <div class="qr-code-box" id="p2pQrCode" style="margin-bottom:1rem;"></div>
+          <div style="font-size:0.75rem; font-family:'Fira Code',monospace; color:var(--text-muted);" id="myPeerId">ID: generating...</div>
+        </div>
+
+        <!-- Live Message / Sync Box -->
+        <div class="p2p-card">
+          <div style="font-size:0.85rem; font-weight:700; text-transform:uppercase; color:var(--accent2); margin-bottom:1rem;">Live Cross-Device Transfer</div>
+          <textarea id="p2pMsgInput" class="qr-textarea" rows="4" placeholder="Type a message or paste a link here to sync across devices instantly..."></textarea>
+          <button class="qr-btn" style="width:100%; margin-top:0.75rem; justify-content:center;" onclick="sendP2pMessage()"><span>🚀</span> Send to Connected Device</button>
+
+          <div style="margin-top:1.2rem;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.4rem;">Received Content:</div>
+            <div id="p2pReceivedBox" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.8rem; font-size:0.88rem; min-height:60px; font-family:'Fira Code',monospace;">Waiting for transfer...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: HISTORY -->
+    <div id="view-history" class="qr-card" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="font-size:1.15rem; font-weight:700; color:var(--accent);">📜 Saved QR Codes</h2>
+        <button class="qr-btn qr-btn-outline" style="font-size:0.78rem; padding:0.4rem 0.9rem;" onclick="clearHistory()"><span>🗑️</span> Clear All</button>
+      </div>
+      <div id="historyContainer" class="history-list"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Made with ❤️ for Gujarat &nbsp;|&nbsp; <strong>Unit Calculator</strong> &nbsp;|&nbsp; PDF &middot; Compiler &middot; Color Viewer &middot; QR Connect</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('theme-toggle');
+    const savedTheme = localStorage.getItem('unitcalc_theme') || 'dark';
+    if (savedTheme === 'light') { document.body.classList.add('light'); themeToggle.textContent = '☀️'; }
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light');
+      const isLight = document.body.classList.contains('light');
+      themeToggle.textContent = isLight ? '☀️' : '🌙';
+      localStorage.setItem('unitcalc_theme', isLight ? 'light' : 'dark');
+    });
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    function copyText(text) {
+      if (!text) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+      } else {
+        const ta = document.createElement('textarea'); ta.value = text;
+        ta.style.cssText = 'position:fixed;top:-9999px'; document.body.appendChild(ta);
+        ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+        showToast('Copied to clipboard!');
+      }
+    }
+
+    // QR State
+    let currentType = 'url';
+    let qrcodeInstance = null;
+    let currentPayload = 'https://google.com';
+
+    function setQrType(type) {
+      currentType = type;
+      document.querySelectorAll('.qr-type-pill').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+
+      ['url', 'text', 'wifi', 'upi', 'vcard', 'email', 'whatsapp'].forEach(t => {
+        const f = document.getElementById(`form-${t}`);
+        if (f) f.style.display = (t === type) ? 'block' : 'none';
+      });
+
+      generateQr();
+    }
+
+    function getFormattedPayload() {
+      switch (currentType) {
+        case 'url':
+          return document.getElementById('inputUrl').value.trim() || 'https://google.com';
+        case 'text':
+          return document.getElementById('inputText').value.trim() || 'Hello';
+        case 'wifi': {
+          const s = document.getElementById('wifiSsid').value.trim();
+          const p = document.getElementById('wifiPass').value;
+          const t = document.getElementById('wifiType').value;
+          return `WIFI:S:${s};T:${t};P:${p};;`;
+        }
+        case 'upi': {
+          const vpa = document.getElementById('upiVpa').value.trim();
+          const name = encodeURIComponent(document.getElementById('upiName').value.trim());
+          const amt = document.getElementById('upiAmount').value.trim();
+          let uri = `upi://pay?pa=${vpa}&pn=${name}&cu=INR`;
+          if (amt) uri += `&am=${amt}`;
+          return uri;
+        }
+        case 'vcard': {
+          const name = document.getElementById('vcardName').value.trim();
+          const phone = document.getElementById('vcardPhone').value.trim();
+          const email = document.getElementById('vcardEmail').value.trim();
+          return `BEGIN:VCARD\nVERSION:3.0\nN:${name}\nFN:${name}\nTEL:${phone}\nEMAIL:${email}\nEND:VCARD`;
+        }
+        case 'email': {
+          const to = document.getElementById('emailTo').value.trim();
+          const sub = encodeURIComponent(document.getElementById('emailSub').value.trim());
+          return `mailto:${to}?subject=${sub}`;
+        }
+        case 'whatsapp': {
+          const phone = document.getElementById('waPhone').value.trim();
+          const msg = encodeURIComponent(document.getElementById('waMsg').value.trim());
+          return `https://wa.me/${phone}?text=${msg}`;
+        }
+        default:
+          return 'https://google.com';
+      }
+    }
+
+    function generateQr() {
+      currentPayload = getFormattedPayload();
+      const dark = document.getElementById('qrColorDark').value;
+      const light = document.getElementById('qrColorLight').value;
+      const container = document.getElementById('qrOutput');
+      container.innerHTML = '';
+
+      qrcodeInstance = new QRCode(container, {
+        text: currentPayload,
+        width: 190,
+        height: 190,
+        colorDark: dark,
+        colorLight: light,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function downloadQr() {
+      const img = document.querySelector('#qrOutput img');
+      const canvas = document.querySelector('#qrOutput canvas');
+      let src = '';
+      if (img && img.src) src = img.src;
+      else if (canvas) src = canvas.toDataURL('image/png');
+
+      if (!src) { showToast('QR not ready'); return; }
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = `qr-code-${Date.now()}.png`;
+      a.click();
+      showToast('QR Code downloaded!');
+    }
+
+    function copyQrData() {
+      copyText(currentPayload);
+    }
+
+    // Tabs switching
+    let html5QrScanner = null;
+
+    function switchTab(tab) {
+      document.getElementById('tab-gen').classList.toggle('active', tab === 'gen');
+      document.getElementById('tab-scan').classList.toggle('active', tab === 'scan');
+      document.getElementById('tab-p2p').classList.toggle('active', tab === 'p2p');
+      document.getElementById('tab-history').classList.toggle('active', tab === 'history');
+
+      document.getElementById('view-gen').style.display = tab === 'gen' ? 'block' : 'none';
+      document.getElementById('view-scan').style.display = tab === 'scan' ? 'block' : 'none';
+      document.getElementById('view-p2p').style.display = tab === 'p2p' ? 'block' : 'none';
+      document.getElementById('view-history').style.display = tab === 'history' ? 'block' : 'none';
+
+      if (tab !== 'scan' && html5QrScanner) {
+        stopCameraScanner();
+      }
+      if (tab === 'history') {
+        renderHistory();
+      }
+      if (tab === 'p2p') {
+        initP2p();
+      }
+    }
+
+    // CAMERA SCANNER
+    function startCameraScanner() {
+      const readerEl = document.getElementById('reader');
+      document.getElementById('startCameraBtn').style.display = 'none';
+      document.getElementById('stopCameraBtn').style.display = 'inline-flex';
+
+      html5QrScanner = new Html5Qrcode('reader');
+      html5QrScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          onQrScanSuccess(decodedText);
+        },
+        (errorMessage) => {}
+      ).catch(err => {
+        showToast(`Camera error: ${err}`);
+        document.getElementById('startCameraBtn').style.display = 'inline-flex';
+        document.getElementById('stopCameraBtn').style.display = 'none';
+      });
+    }
+
+    function stopCameraScanner() {
+      if (html5QrScanner) {
+        html5QrScanner.stop().then(() => {
+          html5QrScanner.clear();
+          html5QrScanner = null;
+          document.getElementById('startCameraBtn').style.display = 'inline-flex';
+          document.getElementById('stopCameraBtn').style.display = 'none';
+        }).catch(() => {});
+      }
+    }
+
+    function scanImageFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const html5Qr = new Html5Qrcode('reader');
+      html5Qr.scanFile(file, true)
+        .then(decodedText => {
+          onQrScanSuccess(decodedText);
+        })
+        .catch(err => {
+          showToast('Could not find a valid QR code in this image.');
+        });
+    }
+
+    function onQrScanSuccess(text) {
+      showToast('✅ QR Code Scanned!');
+      const resContainer = document.getElementById('scanResultContainer');
+      const resText = document.getElementById('scanResultText');
+      const openLink = document.getElementById('scanOpenLink');
+
+      resContainer.style.display = 'block';
+      resText.textContent = text;
+
+      if (text.startsWith('http://') || text.startsWith('https://')) {
+        openLink.href = text;
+        openLink.style.display = 'inline-flex';
+      } else {
+        openLink.style.display = 'none';
+      }
+
+      // Save to scan history
+      saveItem({ type: 'scanned', payload: text, date: new Date().toLocaleString() });
+    }
+
+    // HISTORY MANAGEMENT
+    function getHistory() {
+      return JSON.parse(localStorage.getItem('unitcalc_qr_history') || '[]');
+    }
+
+    function saveItem(item) {
+      const list = getHistory();
+      list.unshift(item);
+      if (list.length > 50) list.pop();
+      localStorage.setItem('unitcalc_qr_history', JSON.stringify(list));
+      updateHistCount();
+    }
+
+    function saveToHistory() {
+      saveItem({ type: currentType, payload: currentPayload, date: new Date().toLocaleString() });
+      showToast('Saved to history!');
+    }
+
+    function clearHistory() {
+      localStorage.removeItem('unitcalc_qr_history');
+      renderHistory();
+      showToast('History cleared');
+    }
+
+    function updateHistCount() {
+      const list = getHistory();
+      document.getElementById('histCount').textContent = list.length;
+    }
+
+    function renderHistory() {
+      const list = getHistory();
+      const container = document.getElementById('historyContainer');
+      updateHistCount();
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem;">No saved QR codes yet. Generate or scan some!</div>';
+        return;
+      }
+
+      container.innerHTML = list.map((item, idx) => `
+        <div class="history-item">
+          <div>
+            <div style="font-size:0.75rem; font-weight:700; color:var(--accent2); text-transform:uppercase;">${item.type} &middot; ${item.date}</div>
+            <div style="font-size:0.88rem; font-family:'Fira Code',monospace; word-break:break-all;">${item.payload}</div>
+          </div>
+          <div style="display:flex;gap:0.4rem;">
+            <button class="qr-btn qr-btn-outline" style="padding:0.4rem 0.8rem; font-size:0.78rem;" onclick="copyText('${encodeURIComponent(item.payload).replace(/'/g, "\\'")}')">Copy</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // PEER-TO-PEER WEBRTC LIVE CONNECT
+    let peer = null;
+    let conn = null;
+
+    function initP2p() {
+      if (peer) return;
+      const myIdEl = document.getElementById('myPeerId');
+      const statusEl = document.getElementById('p2pStatus');
+
+      peer = new Peer();
+      peer.on('open', (id) => {
+        myIdEl.textContent = `Device ID: ${id}`;
+        // Generate connection QR
+        const pairUrl = `${window.location.origin}${window.location.pathname}?peer=${id}`;
+        const p2pQr = document.getElementById('p2pQrCode');
+        p2pQr.innerHTML = '';
+        new QRCode(p2pQr, { text: pairUrl, width: 150, height: 150 });
+      });
+
+      peer.on('connection', (c) => {
+        conn = c;
+        setupConn();
+      });
+
+      // Check if URL has peer param to connect automatically
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetPeer = urlParams.get('peer');
+      if (targetPeer) {
+        conn = peer.connect(targetPeer);
+        setupConn();
+      }
+    }
+
+    function setupConn() {
+      const statusEl = document.getElementById('p2pStatus');
+      conn.on('open', () => {
+        statusEl.textContent = '🟢 Connected Live';
+        statusEl.classList.add('connected');
+        showToast('Connected to peer device!');
+      });
+
+      conn.on('data', (data) => {
+        document.getElementById('p2pReceivedBox').textContent = data;
+        showToast('📥 Received message from paired device!');
+      });
+    }
+
+    function sendP2pMessage() {
+      const msg = document.getElementById('p2pMsgInput').value.trim();
+      if (!msg) return;
+      if (conn && conn.open) {
+        conn.send(msg);
+        showToast('Sent message to connected device!');
+      } else {
+        showToast('No device connected. Scan the QR code with another device first.');
+      }
+    }
+
+    // Init
+    updateHistCount();
+    generateQr();
+  </script>
+</body>
+</html>
