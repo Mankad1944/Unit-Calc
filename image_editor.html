@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Editor & PDF Export</title>
+  <meta name="description" content="Edit images with drawing tools, text, shapes, and export to PDF — all in your browser." />
+
+  <!-- pdf-lib CDN -->
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       CSS RESET & TOKENS
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page: #0f0f1a;
+      --bg-card: rgba(255, 255, 255, 0.05);
+      --bg-card-hover: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.12);
+      --border-focus: rgba(245, 158, 11, 0.7);
+
+      --accent-1: #f59e0b;   /* amber */
+      --accent-2: #ef4444;   /* red-orange */
+      --accent-3: #8b5cf6;   /* violet */
+      --accent-4: #06b6d4;   /* cyan */
+      --success:  #10b981;
+      --error:    #f43f5e;
+
+      --text-primary:   #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted:     #64748b;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --radius-xl: 32px;
+
+      --shadow-card: 0 8px 32px rgba(0,0,0,0.45);
+      --shadow-glow: 0 0 40px rgba(245,158,11,0.12);
+
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       ANIMATED BACKGROUND BLOBS
+    ============================================================ */
+    .bg-blobs { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+    .blob {
+      position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.25;
+      animation: blobFloat 12s ease-in-out infinite alternate;
+    }
+    .blob-1 { width: 520px; height: 520px; background: var(--accent-1); top: -150px; left: -150px; animation-duration: 14s; }
+    .blob-2 { width: 400px; height: 400px; background: var(--accent-2); bottom: -100px; right: -80px; animation-duration: 18s; animation-delay: -4s; }
+    .blob-3 { width: 300px; height: 300px; background: var(--accent-3); top: 40%; left: 50%; animation-duration: 22s; animation-delay: -8s; }
+
+    @keyframes blobFloat {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(40px, 30px) scale(1.08); }
+    }
+
+    /* ============================================================
+       PAGE WRAPPER
+    ============================================================ */
+    .page-wrapper {
+      position: relative; z-index: 1; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 16px 40px; width: 100%;
+    }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    .header { text-align: center; margin-bottom: 20px; width: 100%; }
+
+    .header-nav {
+      display: flex; justify-content: center; gap: 10px;
+      margin-bottom: 18px; flex-wrap: wrap;
+    }
+
+    .nav-pill {
+      text-decoration: none; padding: 6px 14px; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .nav-pill.home { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-secondary); }
+    .nav-pill.home:hover { background: rgba(255,255,255,0.1); }
+    .nav-pill.pdf { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.35); color: #8b5cf6; }
+    .nav-pill.pdf:hover { background: rgba(139,92,246,0.25); }
+    .nav-pill.compiler { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.35); color: #10b981; }
+    .nav-pill.compiler:hover { background: rgba(16,185,129,0.25); }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.35);
+      color: var(--accent-1); font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 6px 14px; border-radius: 999px; margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 800; line-height: 1.15;
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-1) 70%, var(--accent-2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .header p { font-size: 0.95rem; color: var(--text-secondary); max-width: 520px; margin: 0 auto; line-height: 1.7; }
+
+    /* ============================================================
+       EDITOR CONTAINER
+    ============================================================ */
+    .editor-container {
+      display: flex; gap: 16px; width: 100%; max-width: 1400px;
+      flex: 1; min-height: 0;
+    }
+
+    @media (max-width: 800px) {
+      .editor-container { flex-direction: column; }
+      .toolbar { flex-direction: row !important; flex-wrap: wrap; width: 100% !important; min-width: unset !important; }
+      .toolbar .tool-section { flex-direction: row; flex-wrap: wrap; }
+      .canvas-area { min-height: 400px; }
+    }
+
+    /* ============================================================
+       TOOLBAR
+    ============================================================ */
+    .toolbar {
+      display: flex; flex-direction: column; gap: 8px;
+      background: var(--bg-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 16px 12px; min-width: 72px; width: 72px;
+      box-shadow: var(--shadow-card); align-items: center;
+      overflow-y: auto; max-height: calc(100vh - 200px);
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .toolbar::-webkit-scrollbar { width: 4px; }
+    .toolbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    .tool-divider {
+      width: 36px; height: 1px; background: var(--border); margin: 4px 0; flex-shrink: 0;
+    }
+
+    .tool-btn {
+      width: 44px; height: 44px; border-radius: var(--radius-sm); border: 1px solid transparent;
+      background: transparent; color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; transition: all var(--transition); position: relative;
+      flex-shrink: 0;
+    }
+
+    .tool-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); transform: scale(1.05); }
+
+    .tool-btn.active {
+      background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5);
+      color: var(--accent-1); box-shadow: 0 0 16px rgba(245,158,11,0.15);
+    }
+
+    .tool-btn .tooltip {
+      position: absolute; left: 110%; top: 50%; transform: translateY(-50%);
+      background: #1e1e2e; color: var(--text-primary); padding: 5px 10px;
+      border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+      white-space: nowrap; pointer-events: none; opacity: 0;
+      transition: opacity 0.2s; z-index: 100; border: 1px solid var(--border);
+    }
+    .tool-btn:hover .tooltip { opacity: 1; }
+
+    @media (max-width: 800px) {
+      .tool-btn .tooltip { left: 50%; top: 110%; transform: translateX(-50%); }
+    }
+
+    /* Color & range inputs */
+    .tool-color-wrapper {
+      width: 44px; height: 44px; border-radius: var(--radius-sm); overflow: hidden;
+      border: 2px solid var(--border); cursor: pointer; position: relative;
+      transition: border-color var(--transition); flex-shrink: 0;
+    }
+    .tool-color-wrapper:hover { border-color: var(--accent-1); }
+
+    .tool-color-input {
+      width: 64px; height: 64px; border: none; padding: 0;
+      cursor: pointer; position: absolute; top: -10px; left: -10px;
+    }
+
+    .tool-range-wrapper {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      width: 44px; flex-shrink: 0;
+    }
+
+    .tool-range-label {
+      font-size: 0.55rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .tool-range-val {
+      font-size: 0.65rem; font-weight: 700; color: var(--accent-1);
+    }
+
+    .tool-range-input {
+      -webkit-appearance: none; appearance: none;
+      width: 44px; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.1); outline: none; cursor: pointer;
+      writing-mode: bt-lr; /* vertical in some browsers */
+    }
+
+    .tool-range-input::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent-1); cursor: pointer;
+      box-shadow: 0 0 6px rgba(245,158,11,0.4);
+    }
+
+    .tool-range-input::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%; border: none;
+      background: var(--accent-1); cursor: pointer;
+    }
+
+    /* ============================================================
+       CANVAS AREA
+    ============================================================ */
+    .canvas-area {
+      flex: 1; display: flex; flex-direction: column;
+      background: var(--bg-card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card); overflow: hidden; position: relative;
+      min-height: 500px;
+    }
+
+    .canvas-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.2); flex-wrap: wrap; gap: 8px;
+    }
+
+    .canvas-info {
+      font-size: 0.75rem; color: var(--text-muted); font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .canvas-info .dim-badge {
+      padding: 2px 8px; border-radius: 4px;
+      background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+      color: var(--accent-1); font-size: 0.68rem; font-weight: 700;
+    }
+
+    .canvas-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .ca-btn {
+      padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-secondary); cursor: pointer;
+      font-size: 0.72rem; font-weight: 600; font-family: inherit;
+      display: flex; align-items: center; gap: 5px; transition: all var(--transition);
+    }
+    .ca-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+    .ca-btn.primary {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: #fff; border-color: transparent;
+      box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+    }
+    .ca-btn.primary:hover { box-shadow: 0 6px 24px rgba(245,158,11,0.5); transform: translateY(-1px); }
+    .ca-btn.success {
+      background: linear-gradient(135deg, var(--success), #059669);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+    }
+    .ca-btn.success:hover { box-shadow: 0 6px 24px rgba(16,185,129,0.5); transform: translateY(-1px); }
+    .ca-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .ca-btn:disabled:hover { transform: none; box-shadow: none; }
+
+    .canvas-viewport {
+      flex: 1; overflow: auto; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      background: repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 50% / 20px 20px;
+    }
+
+    .canvas-stack {
+      position: relative; cursor: crosshair;
+      box-shadow: 0 0 60px rgba(0,0,0,0.5);
+      transition: transform 0.1s ease;
+    }
+
+    .canvas-stack canvas {
+      position: absolute; top: 0; left: 0;
+    }
+
+    #baseCanvas { position: relative; }
+
+    /* ============================================================
+       UPLOAD OVERLAY (shown when no image)
+    ============================================================ */
+    .upload-overlay {
+      position: absolute; inset: 0; z-index: 20;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(15,15,26,0.85); backdrop-filter: blur(8px);
+    }
+
+    .upload-overlay.hidden { display: none; }
+
+    .upload-drop-zone {
+      text-align: center; padding: 60px 40px; border: 2px dashed var(--border);
+      border-radius: var(--radius-xl); cursor: pointer;
+      transition: all var(--transition); max-width: 460px; width: 90%;
+      position: relative; overflow: hidden;
+    }
+
+    .upload-drop-zone:hover, .upload-drop-zone.drag-over {
+      border-color: var(--accent-1); background: rgba(245,158,11,0.06);
+      transform: translateY(-4px);
+    }
+
+    .upload-drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .udz-icon {
+      width: 80px; height: 80px; margin: 0 auto 20px; border-radius: 50%;
+      background: rgba(245,158,11,0.12); display: flex; align-items: center;
+      justify-content: center; font-size: 2.2rem;
+    }
+
+    .udz-title {
+      font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;
+    }
+
+    .udz-sub { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; }
+
+    .udz-formats {
+      margin-top: 16px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
+    }
+
+    .fmt-tag {
+      padding: 3px 10px; border-radius: 999px; font-size: 0.65rem; font-weight: 700;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    /* ============================================================
+       TEXT INPUT MODAL
+    ============================================================ */
+    .text-input-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .text-input-overlay.hidden { display: none; }
+
+    .text-input-modal {
+      background: #1a1a2e; border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 28px 32px; width: 90%; max-width: 440px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      animation: modalIn 0.3s ease;
+    }
+
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+    .text-input-modal h3 {
+      font-size: 1.05rem; font-weight: 700; margin-bottom: 16px;
+      color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+    }
+
+    .text-input-modal textarea {
+      width: 100%; min-height: 80px; padding: 12px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text-primary); font-family: inherit; font-size: 1rem;
+      resize: vertical; outline: none; transition: border-color var(--transition);
+    }
+    .text-input-modal textarea:focus { border-color: var(--accent-1); }
+
+    .text-modal-controls {
+      display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; align-items: center;
+    }
+
+    .text-modal-controls label {
+      font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .text-modal-controls select,
+    .text-modal-controls input[type="number"] {
+      padding: 6px 10px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text-primary); font-family: inherit; font-size: 0.82rem;
+      outline: none;
+    }
+
+    .text-modal-actions {
+      display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end;
+    }
+
+    .tm-btn {
+      padding: 8px 20px; border-radius: 999px; font-family: inherit;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none;
+      transition: all var(--transition);
+    }
+    .tm-btn.cancel { background: rgba(255,255,255,0.08); color: var(--text-secondary); }
+    .tm-btn.cancel:hover { background: rgba(255,255,255,0.15); }
+    .tm-btn.confirm {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: #fff; box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+    }
+    .tm-btn.confirm:hover { box-shadow: 0 6px 20px rgba(245,158,11,0.5); transform: translateY(-1px); }
+
+    /* ============================================================
+       STATUS TOAST
+    ============================================================ */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+      padding: 12px 24px; border-radius: 999px; font-size: 0.82rem; font-weight: 600;
+      z-index: 2000; transition: transform 0.35s ease; pointer-events: none;
+      backdrop-filter: blur(12px);
+    }
+    .toast.visible { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: rgba(16,185,129,0.9); color: #fff; }
+    .toast.error { background: rgba(244,63,94,0.9); color: #fff; }
+    .toast.info { background: rgba(139,92,246,0.9); color: #fff; }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .footer-note {
+      margin-top: 20px; text-align: center; font-size: 0.72rem;
+      color: var(--text-muted); line-height: 1.7;
+    }
+    .footer-note a { color: var(--accent-1); text-decoration: none; }
+    .footer-note a:hover { text-decoration: underline; }
+
+    /* ============================================================
+       SCROLLBAR
+    ============================================================ */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+    /* ============================================================
+       ZOOM INDICATOR
+    ============================================================ */
+    .zoom-indicator {
+      position: absolute; bottom: 12px; right: 12px; z-index: 10;
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      padding: 4px 6px; border-radius: 999px; border: 1px solid var(--border);
+    }
+    .zoom-btn {
+      width: 28px; height: 28px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.08); color: var(--text-primary);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 700; transition: all var(--transition);
+    }
+    .zoom-btn:hover { background: rgba(245,158,11,0.2); color: var(--accent-1); }
+    .zoom-val { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); min-width: 36px; text-align: center; }
+
+  </style>
+</head>
+<body>
+
+  <!-- Animated background blobs -->
+  <div class="bg-blobs" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-nav">
+        <a href="index.html" class="nav-pill home"><span>🏠</span> Home</a>
+        <a href="pdf_merger.html" class="nav-pill pdf"><span>📄</span> PDF Toolkit</a>
+        <a href="compiler.html" class="nav-pill compiler"><span>💻</span> Compiler</a>
+      </div>
+      <div class="badge">🖼️ Image Editor</div>
+      <h1>Image Editor & PDF Export</h1>
+      <p>Upload an image, draw, write, design — then export as a beautiful PDF. 100% in your browser.</p>
+    </header>
+
+    <!-- Editor -->
+    <div class="editor-container">
+
+      <!-- ── TOOLBAR ── -->
+      <div class="toolbar" id="toolbar">
+
+        <!-- Drawing Tools -->
+        <button class="tool-btn active" data-tool="brush" id="tool-brush" title="Brush">
+          ✏️<span class="tooltip">Brush (B)</span>
+        </button>
+        <button class="tool-btn" data-tool="text" id="tool-text" title="Text">
+          🔤<span class="tooltip">Text (T)</span>
+        </button>
+        <button class="tool-btn" data-tool="rect" id="tool-rect" title="Rectangle">
+          ▢<span class="tooltip">Rectangle (R)</span>
+        </button>
+        <button class="tool-btn" data-tool="circle" id="tool-circle" title="Circle">
+          ◯<span class="tooltip">Circle (C)</span>
+        </button>
+        <button class="tool-btn" data-tool="line" id="tool-line" title="Line">
+          ╱<span class="tooltip">Line (L)</span>
+        </button>
+        <button class="tool-btn" data-tool="arrow" id="tool-arrow" title="Arrow">
+          ➜<span class="tooltip">Arrow (A)</span>
+        </button>
+        <button class="tool-btn" data-tool="eraser" id="tool-eraser" title="Eraser">
+          🧹<span class="tooltip">Eraser (E)</span>
+        </button>
+
+        <div class="tool-divider"></div>
+
+        <!-- Color -->
+        <div class="tool-color-wrapper" title="Draw Color">
+          <input type="color" class="tool-color-input" id="colorPicker" value="#ff3b30" />
+        </div>
+
+        <div class="tool-divider"></div>
+
+        <!-- Stroke Width -->
+        <div class="tool-range-wrapper">
+          <span class="tool-range-label">Size</span>
+          <span class="tool-range-val" id="sizeVal">3</span>
+          <input type="range" class="tool-range-input" id="sizeRange" min="1" max="50" value="3" />
+        </div>
+
+        <div class="tool-divider"></div>
+
+        <!-- Font Size (for text tool) -->
+        <div class="tool-range-wrapper">
+          <span class="tool-range-label">Font</span>
+          <span class="tool-range-val" id="fontSizeVal">24</span>
+          <input type="range" class="tool-range-input" id="fontSizeRange" min="8" max="120" value="24" />
+        </div>
+
+        <div class="tool-divider"></div>
+
+        <!-- Undo/Redo -->
+        <button class="tool-btn" id="undoBtn" title="Undo">
+          ↩️<span class="tooltip">Undo (Ctrl+Z)</span>
+        </button>
+        <button class="tool-btn" id="redoBtn" title="Redo">
+          ↪️<span class="tooltip">Redo (Ctrl+Y)</span>
+        </button>
+
+        <div class="tool-divider"></div>
+
+        <!-- Clear -->
+        <button class="tool-btn" id="clearBtn" title="Clear Drawings">
+          🗑️<span class="tooltip">Clear All</span>
+        </button>
+
+      </div>
+
+      <!-- ── CANVAS AREA ── -->
+      <div class="canvas-area">
+
+        <div class="canvas-topbar">
+          <div class="canvas-info">
+            <span id="imageNameLabel">No image loaded</span>
+            <span class="dim-badge" id="dimBadge" style="display:none;">—</span>
+          </div>
+          <div class="canvas-actions">
+            <button class="ca-btn" id="newImageBtn">📂 Open Image</button>
+            <button class="ca-btn primary" id="exportPdfBtn" disabled>📥 Export PDF</button>
+          </div>
+        </div>
+
+        <div class="canvas-viewport" id="canvasViewport">
+          <!-- Upload Overlay -->
+          <div class="upload-overlay" id="uploadOverlay">
+            <div class="upload-drop-zone" id="uploadDropZone">
+              <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/bmp,image/gif" />
+              <div class="udz-icon">🖼️</div>
+              <div class="udz-title">Drop your image here</div>
+              <div class="udz-sub">or click to browse files</div>
+              <div class="udz-formats">
+                <span class="fmt-tag">PNG</span>
+                <span class="fmt-tag">JPG</span>
+                <span class="fmt-tag">WEBP</span>
+                <span class="fmt-tag">BMP</span>
+                <span class="fmt-tag">GIF</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Canvas Stack -->
+          <div class="canvas-stack" id="canvasStack" style="display:none;">
+            <canvas id="baseCanvas"></canvas>
+            <canvas id="drawCanvas"></canvas>
+          </div>
+
+          <!-- Zoom -->
+          <div class="zoom-indicator" id="zoomIndicator" style="display:none;">
+            <button class="zoom-btn" id="zoomOutBtn">−</button>
+            <span class="zoom-val" id="zoomVal">100%</span>
+            <button class="zoom-btn" id="zoomInBtn">+</button>
+            <button class="zoom-btn" id="zoomFitBtn" title="Fit to view">⊡</button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div><!-- /.editor-container -->
+
+    <p class="footer-note">
+      Powered by <a href="https://pdf-lib.js.org/" target="_blank" rel="noopener">pdf-lib</a> ·
+      Your files never leave your device · No server involved
+    </p>
+
+  </div><!-- /.page-wrapper -->
+
+  <!-- Text Input Modal -->
+  <div class="text-input-overlay hidden" id="textInputOverlay">
+    <div class="text-input-modal">
+      <h3>✍️ Add Text</h3>
+      <textarea id="textInputArea" placeholder="Type your text here..." rows="3"></textarea>
+      <div class="text-modal-controls">
+        <label>
+          Font:
+          <select id="textFontSelect">
+            <option value="Inter" selected>Inter</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Comic Sans MS">Comic Sans MS</option>
+          </select>
+        </label>
+        <label>
+          Bold:
+          <input type="checkbox" id="textBoldCheck" />
+        </label>
+        <label>
+          Italic:
+          <input type="checkbox" id="textItalicCheck" />
+        </label>
+      </div>
+      <div class="text-modal-actions">
+        <button class="tm-btn cancel" id="textCancelBtn">Cancel</button>
+        <button class="tm-btn confirm" id="textConfirmBtn">Place Text</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+
+  <script>
+    /* ============================================================
+       IMAGE EDITOR — Full Canvas Editor with PDF Export
+    ============================================================ */
+
+    // ── DOM refs ──────────────────────────────────────────────
+    const fileInput      = document.getElementById('fileInput');
+    const uploadOverlay  = document.getElementById('uploadOverlay');
+    const uploadDropZone = document.getElementById('uploadDropZone');
+    const canvasStack    = document.getElementById('canvasStack');
+    const baseCanvas     = document.getElementById('baseCanvas');
+    const drawCanvas     = document.getElementById('drawCanvas');
+    const baseCtx        = baseCanvas.getContext('2d');
+    const drawCtx        = drawCanvas.getContext('2d');
+    const canvasViewport = document.getElementById('canvasViewport');
+    const imageNameLabel = document.getElementById('imageNameLabel');
+    const dimBadge       = document.getElementById('dimBadge');
+    const exportPdfBtn   = document.getElementById('exportPdfBtn');
+    const newImageBtn    = document.getElementById('newImageBtn');
+    const zoomIndicator  = document.getElementById('zoomIndicator');
+    const zoomVal        = document.getElementById('zoomVal');
+    const zoomInBtn      = document.getElementById('zoomInBtn');
+    const zoomOutBtn     = document.getElementById('zoomOutBtn');
+    const zoomFitBtn     = document.getElementById('zoomFitBtn');
+
+    const colorPicker    = document.getElementById('colorPicker');
+    const sizeRange      = document.getElementById('sizeRange');
+    const sizeVal        = document.getElementById('sizeVal');
+    const fontSizeRange  = document.getElementById('fontSizeRange');
+    const fontSizeVal    = document.getElementById('fontSizeVal');
+    const undoBtn        = document.getElementById('undoBtn');
+    const redoBtn        = document.getElementById('redoBtn');
+    const clearBtn       = document.getElementById('clearBtn');
+
+    // Text modal
+    const textInputOverlay = document.getElementById('textInputOverlay');
+    const textInputArea    = document.getElementById('textInputArea');
+    const textFontSelect   = document.getElementById('textFontSelect');
+    const textBoldCheck    = document.getElementById('textBoldCheck');
+    const textItalicCheck  = document.getElementById('textItalicCheck');
+    const textCancelBtn    = document.getElementById('textCancelBtn');
+    const textConfirmBtn   = document.getElementById('textConfirmBtn');
+
+    const toastEl = document.getElementById('toast');
+
+    // ── State ────────────────────────────────────────────────
+    let currentTool   = 'brush';
+    let drawColor     = '#ff3b30';
+    let strokeWidth   = 3;
+    let fontSize      = 24;
+    let zoom          = 1;
+    let loadedImage   = null;  // HTMLImageElement
+    let imgWidth      = 0;
+    let imgHeight     = 0;
+
+    // Drawing state
+    let isDrawing     = false;
+    let startX        = 0;
+    let startY        = 0;
+    let lastX         = 0;
+    let lastY         = 0;
+
+    // Undo/redo
+    let undoStack     = [];
+    let redoStack     = [];
+    const MAX_UNDO    = 40;
+
+    // Text placement
+    let textPlaceX    = 0;
+    let textPlaceY    = 0;
+
+    // Snapshot before shape draw (for live preview)
+    let shapeSnapshot = null;
+
+
+    // ── Toast ────────────────────────────────────────────────
+    function showToast(msg, type = 'info') {
+      toastEl.textContent = msg;
+      toastEl.className = 'toast ' + type + ' visible';
+      clearTimeout(toastEl._tid);
+      toastEl._tid = setTimeout(() => { toastEl.classList.remove('visible'); }, 2800);
+    }
+
+
+    // ── Tool Selection ───────────────────────────────────────
+    const toolBtns = document.querySelectorAll('.tool-btn[data-tool]');
+    toolBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        toolBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTool = btn.dataset.tool;
+        drawCanvas.style.cursor = currentTool === 'eraser' ? 'cell' :
+                                  currentTool === 'text' ? 'text' : 'crosshair';
+      });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      const key = e.key.toLowerCase();
+      if (key === 'b') clickTool('brush');
+      else if (key === 't') clickTool('text');
+      else if (key === 'r') clickTool('rect');
+      else if (key === 'c') clickTool('circle');
+      else if (key === 'l') clickTool('line');
+      else if (key === 'a') clickTool('arrow');
+      else if (key === 'e') clickTool('eraser');
+      else if (key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if ((key === 'y' && (e.ctrlKey || e.metaKey)) || (key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey)) { e.preventDefault(); redo(); }
+    });
+
+    function clickTool(name) {
+      const btn = document.querySelector(`.tool-btn[data-tool="${name}"]`);
+      if (btn) btn.click();
+    }
+
+    // Range inputs
+    sizeRange.addEventListener('input', () => { strokeWidth = +sizeRange.value; sizeVal.textContent = strokeWidth; });
+    fontSizeRange.addEventListener('input', () => { fontSize = +fontSizeRange.value; fontSizeVal.textContent = fontSize; });
+    colorPicker.addEventListener('input', () => { drawColor = colorPicker.value; });
+
+
+    // ── Image Loading ────────────────────────────────────────
+    fileInput.addEventListener('change', e => {
+      if (e.target.files[0]) loadImageFile(e.target.files[0]);
+    });
+
+    newImageBtn.addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'image/png,image/jpeg,image/webp,image/bmp,image/gif';
+      inp.onchange = e => { if (e.target.files[0]) loadImageFile(e.target.files[0]); };
+      inp.click();
+    });
+
+    // Drag & drop on upload zone
+    uploadDropZone.addEventListener('dragover', e => { e.preventDefault(); uploadDropZone.classList.add('drag-over'); });
+    uploadDropZone.addEventListener('dragleave', () => uploadDropZone.classList.remove('drag-over'));
+    uploadDropZone.addEventListener('drop', e => {
+      e.preventDefault(); uploadDropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) loadImageFile(e.dataTransfer.files[0]);
+    });
+
+    // Also allow drop on entire canvas viewport
+    canvasViewport.addEventListener('dragover', e => e.preventDefault());
+    canvasViewport.addEventListener('drop', e => {
+      e.preventDefault();
+      if (e.dataTransfer.files[0]) loadImageFile(e.dataTransfer.files[0]);
+    });
+
+    function loadImageFile(file) {
+      const validTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/bmp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        showToast('Please upload a valid image file (PNG, JPG, WEBP, BMP, GIF)', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          loadedImage = img;
+          imgWidth = img.naturalWidth;
+          imgHeight = img.naturalHeight;
+
+          // Set canvas sizes
+          baseCanvas.width = drawCanvas.width = imgWidth;
+          baseCanvas.height = drawCanvas.height = imgHeight;
+
+          // Draw base image
+          baseCtx.clearRect(0, 0, imgWidth, imgHeight);
+          baseCtx.drawImage(img, 0, 0);
+
+          // Clear overlay
+          drawCtx.clearRect(0, 0, imgWidth, imgHeight);
+
+          // Reset undo
+          undoStack = [];
+          redoStack = [];
+          saveState();
+
+          // UI
+          uploadOverlay.classList.add('hidden');
+          canvasStack.style.display = 'block';
+          zoomIndicator.style.display = 'flex';
+          imageNameLabel.textContent = file.name;
+          dimBadge.textContent = `${imgWidth} × ${imgHeight}`;
+          dimBadge.style.display = 'inline-block';
+          exportPdfBtn.disabled = false;
+
+          fitToView();
+          showToast('Image loaded! Start editing ✨', 'success');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+
+    // ── Zoom ─────────────────────────────────────────────────
+    function setZoom(z) {
+      zoom = Math.max(0.1, Math.min(5, z));
+      canvasStack.style.transform = `scale(${zoom})`;
+      canvasStack.style.transformOrigin = 'top left';
+      zoomVal.textContent = Math.round(zoom * 100) + '%';
+    }
+
+    zoomInBtn.addEventListener('click', () => setZoom(zoom + 0.15));
+    zoomOutBtn.addEventListener('click', () => setZoom(zoom - 0.15));
+    zoomFitBtn.addEventListener('click', fitToView);
+
+    canvasViewport.addEventListener('wheel', e => {
+      if (!loadedImage) return;
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.08 : 0.08;
+      setZoom(zoom + delta);
+    }, { passive: false });
+
+    function fitToView() {
+      if (!loadedImage) return;
+      const vw = canvasViewport.clientWidth - 40;
+      const vh = canvasViewport.clientHeight - 40;
+      const scale = Math.min(vw / imgWidth, vh / imgHeight, 1);
+      setZoom(scale);
+    }
+
+
+    // ── Undo / Redo ──────────────────────────────────────────
+    function saveState() {
+      if (undoStack.length >= MAX_UNDO) undoStack.shift();
+      undoStack.push(drawCtx.getImageData(0, 0, imgWidth, imgHeight));
+      redoStack = [];
+    }
+
+    function undo() {
+      if (undoStack.length <= 1) return;
+      redoStack.push(undoStack.pop());
+      drawCtx.putImageData(undoStack[undoStack.length - 1], 0, 0);
+    }
+
+    function redo() {
+      if (redoStack.length === 0) return;
+      const state = redoStack.pop();
+      undoStack.push(state);
+      drawCtx.putImageData(state, 0, 0);
+    }
+
+    undoBtn.addEventListener('click', undo);
+    redoBtn.addEventListener('click', redo);
+
+    clearBtn.addEventListener('click', () => {
+      if (!loadedImage) return;
+      drawCtx.clearRect(0, 0, imgWidth, imgHeight);
+      saveState();
+      showToast('Canvas cleared', 'info');
+    });
+
+
+    // ── Canvas coordinates helper ────────────────────────────
+    function getCanvasCoords(e) {
+      const rect = drawCanvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) / zoom,
+        y: (e.clientY - rect.top) / zoom
+      };
+    }
+
+
+    // ── Drawing handlers ─────────────────────────────────────
+    drawCanvas.addEventListener('mousedown', onPointerDown);
+    drawCanvas.addEventListener('mousemove', onPointerMove);
+    drawCanvas.addEventListener('mouseup', onPointerUp);
+    drawCanvas.addEventListener('mouseleave', onPointerUp);
+
+    // Touch support
+    drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); onPointerDown(touchToMouse(e)); }, { passive: false });
+    drawCanvas.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(touchToMouse(e)); }, { passive: false });
+    drawCanvas.addEventListener('touchend', e => { e.preventDefault(); onPointerUp(touchToMouse(e)); }, { passive: false });
+
+    function touchToMouse(e) {
+      const t = e.touches[0] || e.changedTouches[0];
+      return { clientX: t.clientX, clientY: t.clientY, button: 0 };
+    }
+
+
+    function onPointerDown(e) {
+      if (!loadedImage) return;
+      if (e.button !== undefined && e.button !== 0) return;
+
+      const pos = getCanvasCoords(e);
+
+      if (currentTool === 'text') {
+        textPlaceX = pos.x;
+        textPlaceY = pos.y;
+        openTextModal();
+        return;
+      }
+
+      isDrawing = true;
+      startX = pos.x;
+      startY = pos.y;
+      lastX = pos.x;
+      lastY = pos.y;
+
+      if (currentTool === 'brush' || currentTool === 'eraser') {
+        drawCtx.beginPath();
+        drawCtx.moveTo(pos.x, pos.y);
+
+        if (currentTool === 'eraser') {
+          drawCtx.globalCompositeOperation = 'destination-out';
+          drawCtx.lineWidth = strokeWidth * 3;
+        } else {
+          drawCtx.globalCompositeOperation = 'source-over';
+          drawCtx.strokeStyle = drawColor;
+          drawCtx.lineWidth = strokeWidth;
+        }
+        drawCtx.lineCap = 'round';
+        drawCtx.lineJoin = 'round';
+      }
+
+      // Save snapshot for shape preview
+      if (['rect', 'circle', 'line', 'arrow'].includes(currentTool)) {
+        shapeSnapshot = drawCtx.getImageData(0, 0, imgWidth, imgHeight);
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!isDrawing || !loadedImage) return;
+      const pos = getCanvasCoords(e);
+
+      if (currentTool === 'brush' || currentTool === 'eraser') {
+        drawCtx.lineTo(pos.x, pos.y);
+        drawCtx.stroke();
+        lastX = pos.x;
+        lastY = pos.y;
+      } else if (['rect', 'circle', 'line', 'arrow'].includes(currentTool)) {
+        // Restore snapshot and draw preview
+        drawCtx.putImageData(shapeSnapshot, 0, 0);
+        drawShape(currentTool, startX, startY, pos.x, pos.y, false);
+      }
+    }
+
+    function onPointerUp(e) {
+      if (!isDrawing) return;
+      isDrawing = false;
+
+      if (currentTool === 'brush' || currentTool === 'eraser') {
+        drawCtx.closePath();
+        drawCtx.globalCompositeOperation = 'source-over';
+        saveState();
+      } else if (['rect', 'circle', 'line', 'arrow'].includes(currentTool)) {
+        const pos = getCanvasCoords(e);
+        drawCtx.putImageData(shapeSnapshot, 0, 0);
+        drawShape(currentTool, startX, startY, pos.x, pos.y, true);
+        shapeSnapshot = null;
+        saveState();
+      }
+    }
+
+
+    // ── Shape Drawing ────────────────────────────────────────
+    function drawShape(type, x1, y1, x2, y2, isFinal) {
+      drawCtx.save();
+      drawCtx.globalCompositeOperation = 'source-over';
+      drawCtx.strokeStyle = drawColor;
+      drawCtx.lineWidth = strokeWidth;
+      drawCtx.lineCap = 'round';
+      drawCtx.lineJoin = 'round';
+
+      if (!isFinal) {
+        drawCtx.setLineDash([6, 4]);
+      } else {
+        drawCtx.setLineDash([]);
+      }
+
+      if (type === 'rect') {
+        drawCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      } else if (type === 'circle') {
+        const cx = (x1 + x2) / 2;
+        const cy = (y1 + y2) / 2;
+        const rx = Math.abs(x2 - x1) / 2;
+        const ry = Math.abs(y2 - y1) / 2;
+        drawCtx.beginPath();
+        drawCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        drawCtx.stroke();
+      } else if (type === 'line') {
+        drawCtx.beginPath();
+        drawCtx.moveTo(x1, y1);
+        drawCtx.lineTo(x2, y2);
+        drawCtx.stroke();
+      } else if (type === 'arrow') {
+        drawCtx.setLineDash([]);
+        drawCtx.beginPath();
+        drawCtx.moveTo(x1, y1);
+        drawCtx.lineTo(x2, y2);
+        drawCtx.stroke();
+        // Arrowhead
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const headLen = Math.max(12, strokeWidth * 4);
+        drawCtx.beginPath();
+        drawCtx.moveTo(x2, y2);
+        drawCtx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+        drawCtx.moveTo(x2, y2);
+        drawCtx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+        drawCtx.stroke();
+      }
+
+      drawCtx.restore();
+    }
+
+
+    // ── Text Modal ───────────────────────────────────────────
+    function openTextModal() {
+      textInputArea.value = '';
+      textInputOverlay.classList.remove('hidden');
+      setTimeout(() => textInputArea.focus(), 100);
+    }
+
+    textCancelBtn.addEventListener('click', () => textInputOverlay.classList.add('hidden'));
+
+    textConfirmBtn.addEventListener('click', () => {
+      const text = textInputArea.value.trim();
+      if (!text) { showToast('Please enter some text', 'error'); return; }
+
+      const font = textFontSelect.value;
+      const bold = textBoldCheck.checked ? 'bold' : 'normal';
+      const italic = textItalicCheck.checked ? 'italic' : 'normal';
+
+      drawCtx.save();
+      drawCtx.globalCompositeOperation = 'source-over';
+      drawCtx.font = `${italic} ${bold} ${fontSize}px "${font}", sans-serif`;
+      drawCtx.fillStyle = drawColor;
+      drawCtx.textBaseline = 'top';
+
+      // Handle multiline
+      const lines = text.split('\n');
+      const lineHeight = fontSize * 1.3;
+      lines.forEach((line, i) => {
+        drawCtx.fillText(line, textPlaceX, textPlaceY + i * lineHeight);
+      });
+
+      drawCtx.restore();
+      saveState();
+      textInputOverlay.classList.add('hidden');
+      showToast('Text placed ✓', 'success');
+    });
+
+    // Close modal on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !textInputOverlay.classList.contains('hidden')) {
+        textInputOverlay.classList.add('hidden');
+      }
+    });
+
+
+    // ── Export to PDF ────────────────────────────────────────
+    exportPdfBtn.addEventListener('click', async () => {
+      if (!loadedImage) return;
+
+      exportPdfBtn.disabled = true;
+      exportPdfBtn.textContent = '⏳ Exporting...';
+
+      try {
+        // Composite both canvases into a single image
+        const compositeCanvas = document.createElement('canvas');
+        compositeCanvas.width = imgWidth;
+        compositeCanvas.height = imgHeight;
+        const cCtx = compositeCanvas.getContext('2d');
+        cCtx.drawImage(baseCanvas, 0, 0);
+        cCtx.drawImage(drawCanvas, 0, 0);
+
+        // Get as PNG bytes
+        const pngDataUrl = compositeCanvas.toDataURL('image/png');
+        const pngBytes = await fetch(pngDataUrl).then(r => r.arrayBuffer());
+
+        // Create PDF
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        const pngImage = await pdfDoc.embedPng(pngBytes);
+        const pngDims = pngImage.scale(1);
+
+        // Page size matches image
+        const page = pdfDoc.addPage([pngDims.width, pngDims.height]);
+        page.drawImage(pngImage, {
+          x: 0, y: 0,
+          width: pngDims.width,
+          height: pngDims.height,
+        });
+
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+
+        // Trigger download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'image_export.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        showToast('PDF exported successfully! 🎉', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('Export failed: ' + err.message, 'error');
+      } finally {
+        exportPdfBtn.disabled = false;
+        exportPdfBtn.innerHTML = '📥 Export PDF';
+      }
+    });
+
+  </script>
+</body>
+</html>
