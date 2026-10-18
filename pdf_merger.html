@@ -146,7 +146,7 @@
       gap: 12px;
       margin-bottom: 32px;
       background: rgba(255,255,255,0.03);
-      padding: 8px;
+      padding: 5px;
       border-radius: 999px;
       border: 1px solid var(--border);
     }
@@ -155,9 +155,9 @@
       background: transparent;
       border: none;
       color: var(--text-secondary);
-      padding: 12px 24px;
+      padding: 6px 15px;
       border-radius: 999px;
-      font-size: 0.95rem;
+      font-size: 0.90rem;
       font-weight: 600;
       cursor: pointer;
       transition: all var(--transition);
@@ -330,12 +330,12 @@
     }
 
     /* Icon colours */
-    .zone-icon.main  { background: rgba(139,92,246,0.15); color: var(--accent-1); }
+    .zone-icon.main1 { background: rgba(139,92,246,0.15); color: var(--accent-1); }
     .zone-icon.second { background: rgba(236,72,153,0.15); color: var(--accent-2); }
     .zone-icon.split { background: rgba(6, 182, 212, 0.15); color: var(--accent-3); }
 
     /* ============================================================
-       INPUT GROUPS
+       INPUT GROUPS (139,92,246,0.15)
     ============================================================ */
     .input-row {
       margin-bottom: 28px;
@@ -609,10 +609,17 @@
         </div>
       </a>
       <div class="header-controls">
-        <a href="pdf_merger.html" class="nav-link" title="PDF Toolkit" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(139,92,246,0.25);border:1px solid rgba(139,92,246,0.5);color:#8b5cf6;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;"><span>📄</span> PDF Toolkit</a>
-        <a href="compiler.html" class="nav-link" title="Open Online Compiler" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.25)'" onmouseout="this.style.background='rgba(16,185,129,0.15)'"><span>💻</span> Compiler</a>
-        <a href="color_viewer.html" class="nav-link" title="Open Color Viewer" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.35);color:#ec4899;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(236,72,153,0.25)'" onmouseout="this.style.background='rgba(236,72,153,0.15)'"><span>🎨</span> Color Viewer</a>
-        <a href="qr_connect.html" class="nav-link" title="Open QR Connect" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.35);color:#06b6d4;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.25)'" onmouseout="this.style.background='rgba(6,182,212,0.15)'"><span>📱</span> QR Connect</a>
+        <button class="hamburger-btn" id="hamburger-btn" title="Toggle Menu" aria-label="Toggle navigation menu">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+        <div class="nav-links-group" id="nav-links-group">
+          <a href="pdf_merger.html" class="nav-link" title="PDF Toolkit" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(139,92,246,0.25);border:1px solid rgba(139,92,246,0.5);color:#8b5cf6;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;"><span>📄</span> PDF Toolkit</a>
+          <a href="compiler.html" class="nav-link" title="Open Online Compiler" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.25)'" onmouseout="this.style.background='rgba(16,185,129,0.15)'"><span>💻</span> Compiler</a>
+          <a href="color_viewer.html" class="nav-link" title="Open Color Viewer" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(236,72,153,0.15);border:1px solid rgba(236,72,153,0.35);color:#ec4899;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(236,72,153,0.25)'" onmouseout="this.style.background='rgba(236,72,153,0.15)'"><span>🎨</span> Color Viewer</a>
+          <a href="qr_connect.html" class="nav-link" title="Open QR Connect" style="text-decoration:none;padding:6px 14px;border-radius:999px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.35);color:#06b6d4;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(6,182,212,0.25)'" onmouseout="this.style.background='rgba(6,182,212,0.15)'"><span>📱</span> QR Connect</a>
+        </div>
         <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">🌙</button>
       </div>
     </div>
@@ -658,7 +665,7 @@
           <!-- Main PDF upload zone -->
           <div class="upload-zone" id="zone-main" title="Click or drag to upload Main PDF">
             <input type="file" id="input-main" accept=".pdf,application/pdf" aria-label="Upload Main PDF" />
-            <div class="zone-icon main">📄</div>
+            <div class="zone-icon main1">📄</div>
             <div class="zone-label">Main PDF</div>
             <div class="zone-sub">Click or drag &amp; drop</div>
             <div class="file-name" id="main-file-name">—</div>
@@ -811,11 +818,6 @@
       </div>
 
     </main>
-
-    <p class="footer-note">
-      Made with ❤️ for Gujarat &nbsp;|&nbsp; <strong>Unit Calculator</strong> &nbsp;|&nbsp; PDF &middot; Compiler &middot; Color Viewer &middot; QR Connect
-      <br><small style="opacity:0.6;">Powered by pdf-lib · Your files never leave your device · No server involved</small>
-    </p>
 
   </div><!-- /.page-wrapper -->
 
@@ -1178,5 +1180,7 @@
 
   <div class="toast" id="toast"></div>
 
-</body>
+<script>
+(function(){var b=document.getElementById('hamburger-btn'),g=document.getElementById('nav-links-group');if(!b||!g)return;b.addEventListener('click',function(e){e.stopPropagation();b.classList.toggle('active');g.classList.toggle('show');});document.addEventListener('click',function(e){if(!b.contains(e.target)&&!g.contains(e.target)){b.classList.remove('active');g.classList.remove('show');}});})();
+</script></body>
 </html>

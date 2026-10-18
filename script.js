@@ -298,7 +298,18 @@ const STRINGS = {
     btip1: 'Supports keyboard input (0-9, +, -, *, /, Enter, Backspace)',
     btip2: 'Use C to clear the current calculation',
     btip3: 'Use % for percentage calculations',
-    basicInfoTitle: 'Basic Calculator Tips'
+    basicInfoTitle: 'Basic Calculator Tips',
+    loanType: 'Loan Type',
+    loanVehicle: 'Vehicle / Auto Loan',
+    loanHome: 'Home Loan',
+    loanPersonal: 'Personal Loan',
+    loanEducation: 'Education Loan',
+    sipType: 'Investment Mode',
+    sipModeMonthly: 'Monthly SIP',
+    sipModeLumpsum: 'One-Time Lumpsum (MF)',
+    sipStepUp: 'Annual Step-Up (%)',
+    moratorium: 'Moratorium Period (Months)',
+    compFreq: 'Compounding Frequency'
   },
   gu: {
     heroTitle: 'સ્માર્ટ એકમ<br/>કેલ્ક્યુલેટર',
@@ -418,7 +429,18 @@ const STRINGS = {
     btip1: 'કીબોર્ડ ઇનપુટ સપોર્ટ (0-9, +, -, *, /, Enter, Backspace)',
     btip2: 'ગણતરી સાફ કરવા માટે C નો ઉપયોગ કરો',
     btip3: 'ટકાવારી માટે % નો ઉપયોગ કરો',
-    basicInfoTitle: 'કેલ્ક્યુલેટર ટિપ્સ'
+    basicInfoTitle: 'કેલ્ક્યુલેટર ટિપ્સ',
+    loanType: 'લોન પ્રકાર',
+    loanVehicle: 'વાહન લોન',
+    loanHome: 'હોમ લોન',
+    loanPersonal: 'પર્સનલ લોન',
+    loanEducation: 'એજ્યુકેશન લોન',
+    sipType: 'રોકાણ પ્રકાર',
+    sipModeMonthly: 'માસિક SIP',
+    sipModeLumpsum: 'એકસાથે રોકાણ (MF)',
+    sipStepUp: 'વાર્ષિક વધારો (%)',
+    moratorium: 'ગ્રેસ સમયગાળો (મહિના)',
+    compFreq: 'ચક્રવૃદ્ધિ સમયગાળો'
   },
 };
 
@@ -911,7 +933,168 @@ function applyLanguage() {
 }
 
 // ──────────────────────────────────────────────
-//  12. CATEGORY SWITCH
+//  12. PRIVILEGE & ACCESS GOVERNANCE SYSTEM
+// ──────────────────────────────────────────────
+
+const TOOLS_DEF = [
+  {
+    id: 'unit',
+    name: 'Unit Calculator',
+    icon: '⚖️',
+    sections: [
+      { id: 'length', name: 'Length (લંબાઈ)' },
+      { id: 'area', name: 'Area (ક્ષેત્રફળ)' },
+      { id: 'weight', name: 'Weight / Mass (વજન)' },
+      { id: 'volume', name: 'Volume (કદ)' },
+      { id: 'temperature', name: 'Temperature (તાપમાન)' },
+      { id: 'speed', name: 'Speed (ઝડપ)' },
+      { id: 'time', name: 'Time (સમય)' },
+      { id: 'digital', name: 'Digital Storage (ડેટા)' },
+      { id: 'height', name: 'Height Compare' },
+      { id: 'wv', name: 'Weight ⟷ Volume' }
+    ]
+  },
+  {
+    id: 'fin',
+    name: 'Financial Calculator',
+    icon: '💰',
+    sections: [
+      { id: 'sip', name: 'SIP & Mutual Funds' },
+      { id: 'fd', name: 'Fixed Deposit (FD)' },
+      { id: 'rd', name: 'Recurring Deposit (RD)' },
+      { id: 'ppf', name: 'Public Provident Fund (PPF)' },
+      { id: 'nsc', name: 'National Savings Certificate (NSC)' },
+      { id: 'loan', name: 'Loans & EMI' }
+    ]
+  },
+  { id: 'basic', name: 'Basic Calculator', icon: '🔢', sections: [] },
+  { id: 'pdf', name: 'PDF Toolkit', icon: '📄', sections: [] },
+  { id: 'compiler', name: 'Online Compiler', icon: '💻', sections: [] },
+  { id: 'color', name: 'Color Viewer', icon: '🎨', sections: [] },
+  { id: 'qr', name: 'QR Connect', icon: '📱', sections: [] }
+];
+
+function getPrivileges() {
+  const defaultPriv = {
+    requireLogin: false,
+    allowRegistration: true,
+    globalTools: {
+      unit: true, fin: true, basic: true, pdf: true, compiler: true, color: true, qr: true
+    },
+    globalSections: {
+      length: true, area: true, weight: true, volume: true, temperature: true, speed: true, time: true, digital: true, height: true, wv: true,
+      sip: true, fd: true, rd: true, ppf: true, nsc: true, loan: true
+    },
+    userPrivileges: {} // userId -> { tools: {}, sections: {} }
+  };
+  try {
+    const saved = localStorage.getItem('unitcalc_privileges');
+    if (!saved) return defaultPriv;
+    const parsed = JSON.parse(saved);
+    return {
+      requireLogin: !!parsed.requireLogin,
+      allowRegistration: parsed.allowRegistration !== false,
+      globalTools: Object.assign({}, defaultPriv.globalTools, parsed.globalTools || {}),
+      globalSections: Object.assign({}, defaultPriv.globalSections, parsed.globalSections || {}),
+      userPrivileges: parsed.userPrivileges || {}
+    };
+  } catch (e) {
+    return defaultPriv;
+  }
+}
+
+function savePrivileges(priv) {
+  localStorage.setItem('unitcalc_privileges', JSON.stringify(priv));
+}
+
+function canAccess(toolId, sectionId = null) {
+  const session = JSON.parse(localStorage.getItem('unitcalc_session') || 'null');
+  
+  // Super Admin has full unrestricted root level 0 authority
+  if (session && session.role === 'admin') {
+    return { allowed: true };
+  }
+
+  const priv = getPrivileges();
+
+  // 1. Mandatory Login Policy
+  if (priv.requireLogin && !session) {
+    return {
+      allowed: false,
+      reason: 'login_required',
+      msg: 'Super Administrator has enabled strict access. Please log in or register an account to use this tool.'
+    };
+  }
+
+  // 2. Global Master Tool Switch
+  if (priv.globalTools && priv.globalTools[toolId] === false) {
+    return {
+      allowed: false,
+      reason: 'tool_disabled_global',
+      msg: `The ${toolId.toUpperCase()} tool is currently disabled by Super Administrator.`
+    };
+  }
+
+  // 3. Global Section Switch
+  if (sectionId && priv.globalSections && priv.globalSections[sectionId] === false) {
+    return {
+      allowed: false,
+      reason: 'section_disabled_global',
+      msg: `The '${sectionId}' section is currently disabled by Super Administrator.`
+    };
+  }
+
+  // 4. Per-User Privilege Matrix
+  if (session && session.id) {
+    const users = JSON.parse(localStorage.getItem('unitcalc_users') || '[]');
+    const currentUserObj = users.find(u => u.id === session.id);
+    if (currentUserObj && currentUserObj.status === 'Suspended') {
+      return {
+        allowed: false,
+        reason: 'user_suspended',
+        msg: 'Your account has been suspended by Administrator. Please contact support.'
+      };
+    }
+
+    const uPriv = priv.userPrivileges?.[session.id];
+    if (uPriv) {
+      if (uPriv.tools && uPriv.tools[toolId] === false) {
+        return {
+          allowed: false,
+          reason: 'user_tool_denied',
+          msg: `Your account has not been granted privilege to use the ${toolId.toUpperCase()} tool.`
+        };
+      }
+      if (sectionId && uPriv.sections && uPriv.sections[sectionId] === false) {
+        return {
+          allowed: false,
+          reason: 'user_section_denied',
+          msg: `Your account has not been granted privilege to access the '${sectionId}' section.`
+        };
+      }
+    }
+  }
+
+  return { allowed: true };
+}
+
+function showPrivilegeLock(msg, isLoginPrompt = true) {
+  const overlay = document.getElementById('privilege-lock-overlay');
+  const msgEl = document.getElementById('lock-msg');
+  const loginBtn = document.getElementById('btn-lock-login');
+  if (!overlay) return;
+  if (msgEl) msgEl.textContent = msg;
+  if (loginBtn) loginBtn.style.display = isLoginPrompt ? 'inline-block' : 'none';
+  overlay.classList.remove('hidden');
+}
+
+function hidePrivilegeLock() {
+  const overlay = document.getElementById('privilege-lock-overlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+// ──────────────────────────────────────────────
+//  12.5 CATEGORY SWITCH
 // ──────────────────────────────────────────────
 
 const CATEGORY_DEFAULTS = {
@@ -926,25 +1109,56 @@ const CATEGORY_DEFAULTS = {
 };
 
 function switchCategory(cat) {
+  const accessCheck = canAccess('unit', cat);
+  if (!accessCheck.allowed) {
+    showPrivilegeLock(accessCheck.msg, accessCheck.reason === 'login_required');
+    return;
+  }
+
   state.category = cat;
-  const def = CATEGORY_DEFAULTS[cat] || { from: UNITS[cat][0].key, to: UNITS[cat][1].key };
-  state.fromKey = def.from;
-  state.toKey = def.to;
+  const isWv = cat === 'wv';
 
   // Update tabs
   document.querySelectorAll('#tabs-container .tab').forEach(t => {
     t.classList.toggle('active', t.dataset.category === cat);
   });
 
+  const convLayout = document.querySelector('.converter-layout:not(.wv-converter-layout)');
+  const allResults = document.getElementById('all-results-section');
+  const infoPanel = document.getElementById('info-panel');
+  const wvSection = document.getElementById('wv-calc-section');
+
+  if (isWv) {
+    if (convLayout) convLayout.classList.add('hidden');
+    if (allResults) allResults.classList.add('hidden');
+    if (infoPanel) infoPanel.classList.add('hidden');
+    if (wvSection) wvSection.classList.remove('hidden');
+    if (els.feetBadge) els.feetBadge.classList.add('hidden');
+    if (els.gujaratiBadge) els.gujaratiBadge.classList.add('hidden');
+    if (els.hcToggleWrapper) els.hcToggleWrapper.classList.add('hidden');
+    if (els.hcSection) els.hcSection.classList.add('hidden');
+    if (typeof updateWeightVolumeCalc === 'function') updateWeightVolumeCalc();
+    return;
+  }
+
+  if (convLayout) convLayout.classList.remove('hidden');
+  if (allResults) allResults.classList.remove('hidden');
+  if (infoPanel) infoPanel.classList.remove('hidden');
+  if (wvSection) wvSection.classList.add('hidden');
+
+  const def = CATEGORY_DEFAULTS[cat] || (UNITS[cat] ? { from: UNITS[cat][0].key, to: (UNITS[cat][1] || UNITS[cat][0]).key } : { from: 'm', to: 'cm' });
+  state.fromKey = def.from;
+  state.toKey = def.to;
+
   populateSelects(cat);
 
   // Show/hide special badges
   const isLength = cat === 'length';
-  const hasGuj = UNITS[cat].some(u => u.gujarati);
+  const hasGuj = UNITS[cat] && UNITS[cat].some(u => u.gujarati);
   if (els.feetBadge) els.feetBadge.classList.toggle('hidden', !isLength);
   if (els.gujaratiBadge) els.gujaratiBadge.classList.toggle('hidden', !hasGuj);
   if (els.hcToggleWrapper) els.hcToggleWrapper.classList.toggle('hidden', !isLength);
-  if (!isLength && els.hcSection) els.hcSection.classList.add('hidden'); // Close section if open
+  if (!isLength && els.hcSection) els.hcSection.classList.add('hidden');
 
   // Show/hide feet hint
   const feetHintEl = document.querySelector('.feet-inch-hint');
@@ -1165,6 +1379,12 @@ function updateHeightGraph() {
 // ──────────────────────────────────────────────
 
 function switchMode(newMode) {
+  const accessCheck = canAccess(newMode);
+  if (!accessCheck.allowed) {
+    showPrivilegeLock(accessCheck.msg, accessCheck.reason === 'login_required');
+    return;
+  }
+
   state.mode = newMode;
   const isUnit = newMode === 'unit';
   const isFin = newMode === 'fin';
@@ -1190,6 +1410,12 @@ function switchMode(newMode) {
 }
 
 function switchFinCategory(cat) {
+  const accessCheck = canAccess('fin', cat);
+  if (!accessCheck.allowed) {
+    showPrivilegeLock(accessCheck.msg, accessCheck.reason === 'login_required');
+    return;
+  }
+
   state.finCategory = cat;
   document.querySelectorAll('#fin-tabs-container .tab').forEach(t => {
     t.classList.toggle('active', t.dataset.fincat === cat);
@@ -1199,27 +1425,67 @@ function switchFinCategory(cat) {
 }
 
 const FIN_CONFIG = {
-  sip: [
-    { id: 'monthlySip', labelKey: 'monthlySip', default: '5000', prefix: '₹' },
-    { id: 'rate', labelKey: 'rate', default: '12', suffix: '%' },
-    { id: 'tenure_ym', labelKey: 'tenure', type: 'dualInput', defaultYears: '10', defaultMonths: '0' }
-  ],
-  fd: [
-    { id: 'principal', labelKey: 'principal', default: '100000', prefix: '₹' },
-    { id: 'rate', labelKey: 'rate', default: '7.0', suffix: '%' },
-    { id: 'tenure_ym', labelKey: 'tenure', type: 'dualInput', defaultYears: '5', defaultMonths: '0' }
-  ],
-  rd: [
-    { id: 'monthlyDeposit', labelKey: 'monthlyDeposit', default: '5000', prefix: '₹' },
-    { id: 'rate', labelKey: 'rate', default: '6.5', suffix: '%' },
-    { id: 'tenure_ym', labelKey: 'tenure', type: 'dualInput', defaultYears: '5', defaultMonths: '0' }
-  ],
-  ppf: [
-    { id: 'yearlyDeposit', labelKey: 'yearlyDeposit', default: '150000', prefix: '₹' },
-    { id: 'rate', labelKey: 'rate', default: '7.1', suffix: '%' },
-    { id: 'years', labelKey: 'ppfYears', default: '15', min: 15 },
-    { id: 'ppfExtend', labelKey: 'ppfExtendLabel', type: 'toggle', default: 'no', options: [{ value: 'no', labelKey: 'no' }, { value: 'yes', labelKey: 'yes' }] }
-  ],
+  sip: {
+    primary: [
+      {
+        id: 'sipType', labelKey: 'sipType', type: 'toggle', default: 'sip',
+        options: [
+          { value: 'sip', labelKey: 'sipModeMonthly' },
+          { value: 'lumpsum', labelKey: 'sipModeLumpsum' }
+        ]
+      },
+      { id: 'monthlySip', labelKey: 'monthlySip', default: '5000', prefix: '₹' },
+      { id: 'rate', labelKey: 'rate', default: '12', suffix: '%' },
+      { id: 'tenure_ym', labelKey: 'tenure', type: 'dualInput', defaultYears: '10', defaultMonths: '0' }
+    ],
+    optional: [
+      { id: 'sipStepUp', labelKey: 'sipStepUp', default: '0', suffix: '%' }
+    ]
+  },
+  fd: {
+    primary: [
+      { id: 'principal', labelKey: 'principal', default: '100000', prefix: '₹' },
+      { id: 'rate', labelKey: 'rate', default: '7.0', suffix: '%' },
+      { id: 'tenure_ym', labelKey: 'tenure', type: 'dualInput', defaultYears: '5', defaultMonths: '0' }
+    ],
+    optional: [
+      {
+        id: 'fdCompFreq', labelKey: 'compFreq', type: 'select', default: 'quarterly',
+        options: [
+          { value: 'quarterly', labelKey: 'freqQuarterly' },
+          { value: 'monthly', labelKey: 'freqMonthly' },
+          { value: 'halfyearly', labelKey: 'freqHalfYearly' },
+          { value: 'yearly', labelKey: 'freqYearly' }
+        ]
+      }
+    ]
+  },
+  rd: {
+    primary: [
+      { id: 'monthlyDeposit', labelKey: 'monthlyDeposit', default: '3880', prefix: '₹' },
+      { id: 'rate', labelKey: 'rate', default: '6.9', suffix: '%' },
+      { id: 'tenure_ym', labelKey: 'tenure', type: 'dualInput', defaultYears: '2', defaultMonths: '0' }
+    ],
+    optional: [
+      {
+        id: 'rdCompFreq', labelKey: 'compFreq', type: 'select', default: 'quarterly',
+        options: [
+          { value: 'quarterly', labelKey: 'freqQuarterly' },
+          { value: 'monthly', labelKey: 'freqMonthly' }
+        ]
+      }
+    ]
+  },
+  ppf: {
+    primary: [
+      { id: 'yearlyDeposit', labelKey: 'yearlyDeposit', default: '150000', prefix: '₹' },
+      { id: 'rate', labelKey: 'rate', default: '7.1', suffix: '%' },
+      { id: 'years', labelKey: 'ppfYears', default: '15', min: 15 }
+    ],
+    optional: [
+      { id: 'ppfExtend', labelKey: 'ppfExtendLabel', type: 'toggle', default: 'no', options: [{ value: 'no', labelKey: 'no' }, { value: 'yes', labelKey: 'yes' }] }
+    ]
+  },
   nsc: {
     primary: [
       { id: 'nscPrincipal', labelKey: 'principal', default: '100000', prefix: '₹' },
@@ -1244,36 +1510,24 @@ const FIN_CONFIG = {
         ]
       }
     ],
-    optional: [
-      // These will be rendered dynamically in renderFinInputs for NSC
-    ]
+    optional: []
   },
   loan: {
     primary: [
+      {
+        id: 'loanType', labelKey: 'loanType', type: 'select', default: 'vehicle',
+        options: [
+          { value: 'vehicle', labelKey: 'loanVehicle' },
+          { value: 'home', labelKey: 'loanHome' },
+          { value: 'personal', labelKey: 'loanPersonal' },
+          { value: 'education', labelKey: 'loanEducation' }
+        ]
+      },
       { id: 'principal', labelKey: 'principal', default: '500000', prefix: '₹' },
       { id: 'rate', labelKey: 'rate', default: '8.5', suffix: '%' },
       { id: 'tenure_ym', labelKey: 'tenure', type: 'dualInput', defaultYears: '5', defaultMonths: '0' }
     ],
-    optional: [
-      { id: 'downpayment', labelKey: 'downpayment', default: '0', prefix: '₹' },
-      { id: 'exchangeVal', labelKey: 'exchangeVal', default: '0', prefix: '₹' },
-      { id: 'procFee', labelKey: 'procFee', default: '0', suffix: '%' },
-      {
-        id: 'repayFreq', labelKey: 'repayFreq', type: 'select', default: 'monthly', options: [
-          { value: 'monthly', labelKey: 'freqMonthly' },
-          { value: 'quarterly', labelKey: 'freqQuarterly' },
-          { value: 'halfyearly', labelKey: 'freqHalfYearly' },
-          { value: 'yearly', labelKey: 'freqYearly' }
-        ]
-      },
-      { id: 'prepayAmt', labelKey: 'prepayAmt', default: '0', prefix: '₹' },
-      {
-        id: 'prepayMode', labelKey: 'prepayMode', default: 'tenure', type: 'select', options: [
-          { value: 'tenure', labelKey: 'prepayReduceTenure' },
-          { value: 'emi', labelKey: 'prepayReduceEmi' }
-        ]
-      }
-    ]
+    optional: []
   }
 };
 
@@ -1362,10 +1616,10 @@ function renderFinField(field, parent, S) {
     parent.appendChild(wrapper);
     wrapper.querySelector('select').addEventListener('change', (e) => {
       window[`fin_${field.id}`] = e.target.value;
-      // Re-render if this is a dependency for other fields
       renderFinInputs();
       calculateFin();
     });
+    if (window[`fin_${field.id}`] === undefined) window[`fin_${field.id}`] = field.default;
     return;
   }
 
@@ -1415,56 +1669,131 @@ function renderFinInputs() {
   const S = STRINGS[state.lang];
   els.finInputGrid.innerHTML = '';
 
-  // Categories with special primary/optional structure
-  if (config.primary) {
-    // Primary fields
-    config.primary.forEach(field => renderFinField(field, els.finInputGrid, S));
+  // Clean up any old optional container
+  const oldOptContainer = document.getElementById('fin-opt-container');
+  if (oldOptContainer) oldOptContainer.remove();
+
+  if (!config) return;
+
+  const primaryFields = config.primary || (Array.isArray(config) ? config : []);
+  primaryFields.forEach(field => renderFinField(field, els.finInputGrid, S));
+
+  // Determine if this category has additional options
+  let hasAdditional = false;
+  let customOptionalFields = [];
+
+  if (cat === 'loan') {
+    hasAdditional = true;
+    const loanType = window.fin_loanType || 'vehicle';
+    if (loanType === 'vehicle') {
+      customOptionalFields = [
+        { id: 'downpayment', labelKey: 'downpayment', default: '0', prefix: '₹' },
+        { id: 'exchangeVal', labelKey: 'exchangeVal', default: '0', prefix: '₹' },
+        { id: 'procFee', labelKey: 'procFee', default: '0', suffix: '%' },
+        {
+          id: 'repayFreq', labelKey: 'repayFreq', type: 'select', default: 'monthly', options: [
+            { value: 'monthly', labelKey: 'freqMonthly' },
+            { value: 'quarterly', labelKey: 'freqQuarterly' },
+            { value: 'halfyearly', labelKey: 'freqHalfYearly' },
+            { value: 'yearly', labelKey: 'freqYearly' }
+          ]
+        },
+        { id: 'prepayAmt', labelKey: 'prepayAmt', default: '0', prefix: '₹' },
+        {
+          id: 'prepayMode', labelKey: 'prepayMode', default: 'tenure', type: 'select', options: [
+            { value: 'tenure', labelKey: 'prepayReduceTenure' },
+            { value: 'emi', labelKey: 'prepayReduceEmi' }
+          ]
+        }
+      ];
+    } else if (loanType === 'home') {
+      customOptionalFields = [
+        { id: 'downpayment', labelKey: 'downpayment', default: '0', prefix: '₹' },
+        { id: 'procFee', labelKey: 'procFee', default: '0', suffix: '%' },
+        {
+          id: 'repayFreq', labelKey: 'repayFreq', type: 'select', default: 'monthly', options: [
+            { value: 'monthly', labelKey: 'freqMonthly' },
+            { value: 'quarterly', labelKey: 'freqQuarterly' },
+            { value: 'halfyearly', labelKey: 'freqHalfYearly' },
+            { value: 'yearly', labelKey: 'freqYearly' }
+          ]
+        },
+        { id: 'prepayAmt', labelKey: 'prepayAmt', default: '0', prefix: '₹' },
+        {
+          id: 'prepayMode', labelKey: 'prepayMode', default: 'tenure', type: 'select', options: [
+            { value: 'tenure', labelKey: 'prepayReduceTenure' },
+            { value: 'emi', labelKey: 'prepayReduceEmi' }
+          ]
+        }
+      ];
+    } else if (loanType === 'personal') {
+      customOptionalFields = [
+        { id: 'procFee', labelKey: 'procFee', default: '0', suffix: '%' },
+        { id: 'prepayAmt', labelKey: 'prepayAmt', default: '0', prefix: '₹' },
+        {
+          id: 'prepayMode', labelKey: 'prepayMode', default: 'tenure', type: 'select', options: [
+            { value: 'tenure', labelKey: 'prepayReduceTenure' },
+            { value: 'emi', labelKey: 'prepayReduceEmi' }
+          ]
+        }
+      ];
+    } else if (loanType === 'education') {
+      customOptionalFields = [
+        { id: 'moratorium', labelKey: 'moratorium', default: '0', suffix: 'mo' },
+        { id: 'procFee', labelKey: 'procFee', default: '0', suffix: '%' },
+        { id: 'prepayAmt', labelKey: 'prepayAmt', default: '0', prefix: '₹' },
+        {
+          id: 'prepayMode', labelKey: 'prepayMode', default: 'tenure', type: 'select', options: [
+            { value: 'tenure', labelKey: 'prepayReduceTenure' },
+            { value: 'emi', labelKey: 'prepayReduceEmi' }
+          ]
+        }
+      ];
+    }
+  } else if (cat === 'nsc') {
+    hasAdditional = true;
+  } else if (config.optional && config.optional.length > 0) {
+    hasAdditional = true;
+    customOptionalFields = config.optional;
+  }
+
+  if (hasAdditional) {
+    const optContainer = document.createElement('div');
+    optContainer.id = 'fin-opt-container';
+    optContainer.className = 'fin-opt-container';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    const optKey = '_optExpanded_' + cat;
+    toggleBtn.className = 'fin-optional-toggle' + (window[optKey] ? ' expanded' : '');
+    toggleBtn.innerHTML = `<span>⚙️ ${S.optionalFields || 'Additional Options'}</span> <span class="toggle-icon">+</span>`;
+    optContainer.appendChild(toggleBtn);
+
+    const panel = document.createElement('div');
+    panel.className = 'fin-optional-panel' + (window[optKey] ? ' visible' : '');
 
     if (cat === 'nsc') {
-      // Remove old optional container if exists
-      let oldOptContainer = document.getElementById('fin-opt-container');
-      if (oldOptContainer) oldOptContainer.remove();
-
-      const optContainer = document.createElement('div');
-      optContainer.id = 'fin-opt-container';
-      optContainer.style.marginTop = '1.5rem';
-
-      // Collapsible optional toggle
-      const toggleBtn = document.createElement('button');
-      toggleBtn.type = 'button';
-      const optKey = '_optExpanded_' + cat;
-      toggleBtn.className = 'fin-optional-toggle' + (window[optKey] ? ' expanded' : '');
-      toggleBtn.innerHTML = `<span class="toggle-icon">+</span> ${S.optionalFields || 'Additional Options'}`;
-      optContainer.appendChild(toggleBtn);
-
-      // Optional panel
-      const panel = document.createElement('div');
-      panel.className = 'fin-optional-panel' + (window[optKey] ? ' visible' : '');
       panel.classList.add('dynamic-layout');
-      
-      // Dynamic fields for NSC
       if (!window.fin_nsc_yearly_count) window.fin_nsc_yearly_count = 1;
       if (!window.fin_nsc_ot_count) window.fin_nsc_ot_count = 1;
 
-      // Yearly sections
       for (let i = 1; i <= window.fin_nsc_yearly_count; i++) {
         const group = document.createElement('div');
         group.className = 'fin-dynamic-group';
         const suffix = i === 1 ? '' : `_${i}`;
-        
         const grid = document.createElement('div');
         grid.className = 'fin-dynamic-grid';
         renderFinField({ id: `nscAmt${suffix}`, labelKey: 'nscAddAmtLabel', default: '0', prefix: '₹' }, grid, S);
         renderFinField({ id: `nscStart${suffix}`, labelKey: 'nscAddStartLabel', default: '' }, grid, S);
         renderFinField({ id: `nscEnd${suffix}`, labelKey: 'nscAddEndLabel', default: '' }, grid, S);
-        
         group.appendChild(grid);
         panel.appendChild(group);
       }
-      
+
       const addYearlyBtn = document.createElement('button');
+      addYearlyBtn.type = 'button';
       addYearlyBtn.className = 'fin-add-more-btn';
-      addYearlyBtn.textContent = S.addMoreYearly;
+      addYearlyBtn.textContent = S.addMoreYearly || '+ Add More Yearly';
       addYearlyBtn.onclick = () => { window.fin_nsc_yearly_count++; renderFinInputs(); };
       panel.appendChild(addYearlyBtn);
 
@@ -1472,38 +1801,40 @@ function renderFinInputs() {
       sep.style.height = '1px'; sep.style.background = 'var(--border)'; sep.style.margin = '0.5rem 0';
       panel.appendChild(sep);
 
-      // One-time sections
       for (let i = 1; i <= window.fin_nsc_ot_count; i++) {
         const group = document.createElement('div');
         group.className = 'fin-dynamic-group';
         const suffix = i === 1 ? '' : `_${i}`;
-        
         const grid = document.createElement('div');
         grid.className = 'fin-dynamic-grid';
         renderFinField({ id: `nscOTYears${suffix}`, labelKey: 'nscAddOTYearsLabel', default: '', type: 'text', placeholder: '2025,2030' }, grid, S);
         renderFinField({ id: `nscOTAmt${suffix}`, labelKey: 'nscAddOTAmtLabel', default: '0', prefix: '₹' }, grid, S);
-        
         group.appendChild(grid);
         panel.appendChild(group);
       }
 
-      optContainer.appendChild(panel);
-      els.finSummaryGrid.parentNode.appendChild(optContainer);
-
-      toggleBtn.addEventListener('click', () => {
-        window[optKey] = !window[optKey];
-        toggleBtn.classList.toggle('expanded', window[optKey]);
-        panel.classList.toggle('visible', window[optKey]);
-      });
-    } else if (config.optional) {
-        // For other categories like Loan, render optional fields directly
-        config.optional.forEach(field => renderFinField(field, els.finInputGrid, S));
+      const addOTBtn = document.createElement('button');
+      addOTBtn.type = 'button';
+      addOTBtn.className = 'fin-add-more-btn';
+      addOTBtn.textContent = S.addMoreOneTime || '+ Add More One-Time';
+      addOTBtn.onclick = () => { window.fin_nsc_ot_count++; renderFinInputs(); };
+      panel.appendChild(addOTBtn);
+    } else {
+      const optGrid = document.createElement('div');
+      optGrid.className = 'fin-opt-grid';
+      customOptionalFields.forEach(f => renderFinField(f, optGrid, S));
+      panel.appendChild(optGrid);
     }
-    return;
-  }
 
-  // Normal array configs
-  config.forEach(field => renderFinField(field, els.finInputGrid, S));
+    optContainer.appendChild(panel);
+    els.finInputGrid.parentNode.appendChild(optContainer);
+
+    toggleBtn.addEventListener('click', () => {
+      window[optKey] = !window[optKey];
+      toggleBtn.classList.toggle('expanded', window[optKey]);
+      panel.classList.toggle('visible', window[optKey]);
+    });
+  }
 }
 
 function getFinVal(id) {
@@ -1514,7 +1845,7 @@ function getFinVal(id) {
 
 // Get total months from dual year/month inputs
 function getFinTenureMonths(baseId) {
-  const yVal = window[`fin_${baseId}_y`] !== undefined ? parseFloat(window[`fin_${baseId}_y`]) || 0 : (parseFloat(FIN_CONFIG[state.finCategory]?.primary?.[2]?.defaultYears || FIN_CONFIG[state.finCategory]?.[2]?.defaultYears || '0'));
+  const yVal = window[`fin_${baseId}_y`] !== undefined ? parseFloat(window[`fin_${baseId}_y`]) || 0 : (parseFloat(FIN_CONFIG[state.finCategory]?.primary?.[3]?.defaultYears || FIN_CONFIG[state.finCategory]?.primary?.[2]?.defaultYears || '0'));
   const mVal = window[`fin_${baseId}_m`] !== undefined ? parseFloat(window[`fin_${baseId}_m`]) || 0 : 0;
   return Math.max(1, Math.round(yVal * 12 + mVal));
 }
@@ -1533,19 +1864,43 @@ function calculateFin() {
   let summaryHTML = '';
 
   if (cat === 'sip') {
+    const sipType = window.fin_sipType || 'sip';
     const P = getFinVal('monthlySip');
-    const r = getFinVal('rate') / 100 / 12;
+    const annualRate = getFinVal('rate') / 100;
     const n = getFinTenureMonths('tenure_ym');
+    const stepUpPct = getFinVal('sipStepUp');
+    schedule = [];
 
-    totalInvestment = P * n;
-    maturityValue = r === 0 ? totalInvestment : P * (((Math.pow(1 + r, n) - 1) / r) * (1 + r));
-    totalInterest = Math.max(0, maturityValue - totalInvestment);
+    if (sipType === 'lumpsum') {
+      // One-Time Mutual Fund Investment
+      totalInvestment = P;
+      const tYears = n / 12;
+      maturityValue = P * Math.pow(1 + annualRate, tYears);
+      totalInterest = Math.max(0, maturityValue - totalInvestment);
 
-    let bal = 0;
-    for (let i = 1; i <= n; i++) {
-      const intEarned = bal * r;
-      bal += P + intEarned;
-      schedule.push({ p: i, deposited: P * i, interestEarned: Math.round(intEarned), balance: Math.round(bal) });
+      const monthlyRate = Math.pow(1 + annualRate, 1 / 12) - 1;
+      let bal = P;
+      for (let i = 1; i <= n; i++) {
+        const monthlyInt = bal * monthlyRate;
+        bal += monthlyInt;
+        schedule.push({ p: i, deposited: P, interestEarned: Math.round(monthlyInt), balance: Math.round(bal) });
+      }
+    } else {
+      // Monthly SIP (Annuity Due: payments at beginning of month)
+      const r = annualRate / 12;
+      let bal = 0;
+      totalInvestment = 0;
+      for (let i = 1; i <= n; i++) {
+        const yearIndex = Math.floor((i - 1) / 12);
+        const currentP = stepUpPct > 0 ? P * Math.pow(1 + stepUpPct / 100, yearIndex) : P;
+        totalInvestment += currentP;
+        bal += currentP;
+        const monthlyInt = bal * r;
+        bal += monthlyInt;
+        schedule.push({ p: i, deposited: Math.round(totalInvestment), interestEarned: Math.round(monthlyInt), balance: Math.round(bal) });
+      }
+      maturityValue = bal;
+      totalInterest = Math.max(0, maturityValue - totalInvestment);
     }
   }
   else if (cat === 'fd') {
@@ -1553,15 +1908,18 @@ function calculateFin() {
     const r = getFinVal('rate') / 100;
     const totalMonths = getFinTenureMonths('tenure_ym');
     const t = totalMonths / 12;
-    const nForm = 4; // quarterly compounding for FD
+    const freq = window.fin_fdCompFreq || 'quarterly';
+    const freqMap = { monthly: 12, quarterly: 4, halfyearly: 2, yearly: 1 };
+    const nForm = freqMap[freq] || 4;
 
     totalInvestment = P;
     maturityValue = P * Math.pow(1 + (r / nForm), nForm * t);
     totalInterest = Math.max(0, maturityValue - P);
 
     let bal = P;
+    const monthlyRate = Math.pow(1 + r / nForm, nForm / 12) - 1;
     for (let i = 1; i <= totalMonths; i++) {
-      const monthlyInt = (bal * (Math.pow(1 + r / nForm, nForm / 12) - 1));
+      const monthlyInt = bal * monthlyRate;
       bal += monthlyInt;
       schedule.push({ p: i, interestEarned: Math.round(monthlyInt), balance: Math.round(bal) });
     }
@@ -1574,7 +1932,7 @@ function calculateFin() {
     const numCycles = Math.max(1, Math.round(getFinVal('nscCycles') || 1));
     const investMode = window.fin_nscInvestMode || 'onetime';    // 'onetime' | 'everyyear'
     const matAction = window.fin_nscMaturityAction || 'reinvestAll'; // 'reinvestAll' | 'renewP' | 'withdraw'
-    // Additional Investments parsing
+
     let yearlyAdditions = [];
     const yearlyCount = window.fin_nsc_yearly_count || 1;
     for (let i = 1; i <= yearlyCount; i++) {
@@ -1721,16 +2079,38 @@ function calculateFin() {
     const P = getFinVal('monthlyDeposit');
     const r = getFinVal('rate') / 100;
     const n = getFinTenureMonths('tenure_ym');
+    const compFreq = window.fin_rdCompFreq || 'quarterly';
     totalInvestment = P * n;
-    let bal = 0;
-    for (let i = 1; i <= n; i++) {
-      const effInt = Math.pow(1 + r / 4, 4 / 12) - 1;
-      const monthlyInt = bal * effInt;
-      bal += P + monthlyInt;
-      schedule.push({ p: i, deposited: P * i, interestEarned: Math.round(monthlyInt), balance: Math.round(bal) });
+    schedule = [];
+
+    if (compFreq === 'monthly') {
+      const monthlyR = r / 12;
+      let bal = 0;
+      for (let i = 1; i <= n; i++) {
+        bal += P;
+        const monthlyInt = bal * monthlyR;
+        bal += monthlyInt;
+        schedule.push({ p: i, deposited: P * i, interestEarned: Math.round(monthlyInt), balance: Math.round(bal) });
+      }
+      maturityValue = bal;
+      totalInterest = Math.max(0, maturityValue - totalInvestment);
+    } else {
+      // Standard Quarterly Compounding (Groww & Indian Bank formula)
+      const iRate = r / 4;
+      let prevBal = 0;
+      let totalScheduleInt = 0;
+      for (let m = 1; m <= n; m++) {
+        const m_q = m / 3;
+        const curBal = P * (Math.pow(1 + iRate, m_q) - 1) / (1 - Math.pow(1 + iRate, -1/3));
+        const intEarned = curBal - prevBal - P;
+        const roundedInt = Math.round(intEarned);
+        totalScheduleInt += roundedInt;
+        prevBal = curBal;
+        schedule.push({ p: m, deposited: P * m, interestEarned: roundedInt, balance: P * m + totalScheduleInt });
+      }
+      totalInterest = totalScheduleInt;
+      maturityValue = totalInvestment + totalInterest;
     }
-    maturityValue = bal;
-    totalInterest = Math.max(0, maturityValue - totalInvestment);
   }
   else if (cat === 'ppf') {
     const P = getFinVal('yearlyDeposit');
@@ -1752,23 +2132,27 @@ function calculateFin() {
     totalInterest = Math.max(0, maturityValue - totalInvestment);
   }
   else if (cat === 'loan') {
+    const loanType = window.fin_loanType || 'vehicle';
     const P_input = getFinVal('principal');
-    const dp = getFinVal('downpayment');
-    const exVal = getFinVal('exchangeVal');
+    const dp = (loanType === 'vehicle' || loanType === 'home') ? getFinVal('downpayment') : 0;
+    const exVal = loanType === 'vehicle' ? getFinVal('exchangeVal') : 0;
     const annualRate = getFinVal('rate') / 100;
     const totalMonths = getFinTenureMonths('tenure_ym');
     const procFeePct = getFinVal('procFee');
     const prepayAmt = getFinVal('prepayAmt');
-    const prepayMode = (document.getElementById('fi-prepayMode') || {}).value || 'tenure';
-    const repayFreq = window.fin_repayFreq || 'monthly';
+    const prepayMode = (document.getElementById('fi-prepayMode') || {}).value || window.fin_prepayMode || 'tenure';
+    const repayFreq = (loanType === 'personal' || loanType === 'education') ? 'monthly' : (window.fin_repayFreq || 'monthly');
+    const moratorium = loanType === 'education' ? (getFinVal('moratorium') || 0) : 0;
 
-    // Periods per year based on frequency
     const freqMap = { monthly: 12, quarterly: 4, halfyearly: 2, yearly: 1 };
     const periodsPerYear = freqMap[repayFreq] || 12;
-    const r = annualRate / periodsPerYear; // rate per period
-    const n = Math.round(totalMonths / (12 / periodsPerYear)); // total periods
+    const r = annualRate / periodsPerYear;
+    const n = Math.round(totalMonths / (12 / periodsPerYear));
 
-    const P = Math.max(0, P_input - dp - exVal);
+    let P = Math.max(0, P_input - dp - exVal);
+    if (moratorium > 0) {
+      P = P * (1 + (annualRate / 12) * moratorium);
+    }
     const fees = P * (procFeePct / 100);
 
     let emi = 0;
@@ -1782,7 +2166,6 @@ function calculateFin() {
     let displayEmi = emi;
     let displayN = n;
 
-    // Prepayment logic
     if (prepayAmt > 0 && prepayAmt < P) {
       const remainingP = P - prepayAmt;
       if (prepayMode === 'tenure') {
@@ -1805,10 +2188,7 @@ function calculateFin() {
     const totalPayment = displayEmi * displayN;
     totalInterest = Math.max(0, totalPayment - P);
 
-    // Installment label based on frequency
     const installLabel = S.installment || 'Installment';
-
-    // Prepayment summary extras
     let prepayExtraHTML = '';
     if (prepayAmt > 0) {
       if (prepayMode === 'tenure') {
@@ -1833,7 +2213,6 @@ function calculateFin() {
       ${prepayExtraHTML}
     `;
 
-    // Build schedule
     let bal = P - prepayAmt;
     if (bal < 0) bal = 0;
     const scheduleN = prepayMode === 'tenure' ? displayN : n;
@@ -2245,13 +2624,1050 @@ function renderVisitorChart(dailyData) {
 }
 
 // ──────────────────────────────────────────────
-//  19. INIT
+//  20. WEIGHT ⟷ VOLUME CONVERTER & COMPARISON
+// ──────────────────────────────────────────────
+
+const SUBSTANCES = [
+  { id: 'water', nameEn: 'Water (પાણી)', density: 1.000, desc: 'Pure Water @ 4°C' },
+  { id: 'milk', nameEn: 'Milk (દૂધ)', density: 1.030, desc: 'Whole Cow/Buffalo Milk' },
+  { id: 'oil', nameEn: 'Cooking Oil (તેલ)', density: 0.920, desc: 'Vegetable / Mustard / Groundnut' },
+  { id: 'ghee', nameEn: 'Desi Ghee (ઘી)', density: 0.905, desc: 'Clarified Butter / Ghee' },
+  { id: 'honey', nameEn: 'Honey (મધ)', density: 1.420, desc: 'Natural Pure Honey' },
+  { id: 'petrol', nameEn: 'Petrol (પેટ્રોલ)', density: 0.740, desc: 'Automotive Gasoline' },
+  { id: 'diesel', nameEn: 'Diesel (ડીઝલ)', density: 0.832, desc: 'Automotive Diesel' },
+  { id: 'kerosene', nameEn: 'Kerosene (કેરોસીન)', density: 0.810, desc: 'Standard Kerosene Oil' },
+  { id: 'sugar', nameEn: 'Sugar (ખાંડ)', density: 0.850, desc: 'Granulated White Sugar' },
+  { id: 'flour', nameEn: 'Wheat Flour (લોટ)', density: 0.590, desc: 'All-purpose Wheat Flour / Atta' },
+];
+
+const WV_WEIGHT_UNITS = {
+  kg: 1.0,
+  g: 0.001,
+  mg: 1e-6,
+  lb: 0.45359237,
+  oz: 0.028349523,
+  maund: 20.0,
+  tola: 0.011664
+};
+
+const WV_VOLUME_UNITS = {
+  L: 1.0,
+  mL: 0.001,
+  galUS: 3.785411784,
+  cup: 0.2365882365,
+  fl_oz: 0.02957352956,
+  m3: 1000.0
+};
+
+let wvState = {
+  substanceId: 'water',
+  density: 1.000,
+  direction: 'w2v', // 'w2v': Weight -> Volume | 'v2w': Volume -> Weight
+  fromUnit: 'kg',
+  toUnit: 'L',
+  amount: 1
+};
+
+function initWeightVolumeConverter() {
+  const substanceSelect = document.getElementById('wv-substance');
+  const customDensityWrap = document.getElementById('wv-custom-density-wrap');
+  const customDensityInput = document.getElementById('wv-custom-density');
+  const btnW2V = document.getElementById('wv-dir-w2v');
+  const btnV2W = document.getElementById('wv-dir-v2w');
+  const fromInput = document.getElementById('wv-from-input');
+  const fromUnitSelect = document.getElementById('wv-from-unit');
+  const toUnitSelect = document.getElementById('wv-to-unit');
+  const swapBtn = document.getElementById('wv-swap-btn');
+
+  if (!substanceSelect || !fromInput) return;
+
+  function setDirection(dir) {
+    wvState.direction = dir;
+    if (btnW2V && btnV2W) {
+      btnW2V.classList.toggle('active', dir === 'w2v');
+      btnV2W.classList.toggle('active', dir === 'v2w');
+    }
+
+    const fromLabel = document.getElementById('wv-from-label');
+    const toLabel = document.getElementById('wv-to-label');
+
+    if (dir === 'w2v') {
+      if (fromLabel) fromLabel.textContent = 'Weight (Mass)';
+      if (toLabel) toLabel.textContent = 'Volume (Capacity)';
+      populateWVUnitSelects('weight', 'volume');
+    } else {
+      if (fromLabel) fromLabel.textContent = 'Volume (Capacity)';
+      if (toLabel) toLabel.textContent = 'Weight (Mass)';
+      populateWVUnitSelects('volume', 'weight');
+    }
+    updateWeightVolumeCalc();
+  }
+
+  function populateWVUnitSelects(fromType, toType) {
+    if (!fromUnitSelect || !toUnitSelect) return;
+    const weightOpts = `
+      <option value="kg">Kilogram (kg)</option>
+      <option value="g">Gram (g)</option>
+      <option value="mg">Milligram (mg)</option>
+      <option value="lb">Pound (lb)</option>
+      <option value="oz">Ounce (oz)</option>
+      <option value="maund">Maund (મણ = 20 kg)</option>
+      <option value="tola">Tola (તોલા = 11.66g)</option>
+    `;
+    const volumeOpts = `
+      <option value="L">Litre (L)</option>
+      <option value="mL">Millilitre (mL)</option>
+      <option value="galUS">Gallon US (gal)</option>
+      <option value="cup">Cup (US)</option>
+      <option value="fl_oz">Fluid Ounce (fl oz)</option>
+      <option value="m3">Cubic Metre (m³)</option>
+    `;
+
+    fromUnitSelect.innerHTML = fromType === 'weight' ? weightOpts : volumeOpts;
+    toUnitSelect.innerHTML = toType === 'weight' ? weightOpts : volumeOpts;
+
+    wvState.fromUnit = fromUnitSelect.value;
+    wvState.toUnit = toUnitSelect.value;
+  }
+
+  substanceSelect.addEventListener('change', (e) => {
+    wvState.substanceId = e.target.value;
+    if (e.target.value === 'custom') {
+      if (customDensityWrap) customDensityWrap.classList.remove('hidden');
+      wvState.density = parseFloat(customDensityInput?.value) || 1.0;
+    } else {
+      if (customDensityWrap) customDensityWrap.classList.add('hidden');
+      const opt = e.target.selectedOptions[0];
+      wvState.density = parseFloat(opt.dataset.density) || 1.0;
+    }
+    updateWeightVolumeCalc();
+  });
+
+  if (customDensityInput) {
+    customDensityInput.addEventListener('input', (e) => {
+      wvState.density = parseFloat(e.target.value) || 1.0;
+      updateWeightVolumeCalc();
+    });
+  }
+
+  if (btnW2V) btnW2V.addEventListener('click', () => setDirection('w2v'));
+  if (btnV2W) btnV2W.addEventListener('click', () => setDirection('v2w'));
+
+  if (fromInput) {
+    fromInput.addEventListener('input', (e) => {
+      wvState.amount = parseFloat(e.target.value) || 0;
+      updateWeightVolumeCalc();
+    });
+  }
+
+  if (fromUnitSelect) {
+    fromUnitSelect.addEventListener('change', (e) => {
+      wvState.fromUnit = e.target.value;
+      updateWeightVolumeCalc();
+    });
+  }
+
+  if (toUnitSelect) {
+    toUnitSelect.addEventListener('change', (e) => {
+      wvState.toUnit = e.target.value;
+      updateWeightVolumeCalc();
+    });
+  }
+
+  if (swapBtn) {
+    swapBtn.addEventListener('click', () => {
+      setDirection(wvState.direction === 'w2v' ? 'v2w' : 'w2v');
+    });
+  }
+
+  // Initial setup
+  setDirection('w2v');
+  renderWVMatrix();
+}
+
+function updateWeightVolumeCalc() {
+  const fromInput = document.getElementById('wv-from-input');
+  const resultDisplay = document.getElementById('wv-result-display');
+  const mainResult = document.getElementById('wv-main-result');
+  const formulaBox = document.getElementById('wv-formula-box');
+
+  const amt = fromInput ? (parseFloat(fromInput.value) || 0) : 1;
+  const dir = wvState.direction;
+  const density = Math.max(0.0001, wvState.density || 1.0); // in kg/L
+
+  let calculatedResult = 0;
+  let formulaStr = '';
+
+  if (dir === 'w2v') {
+    // Weight to Volume: Mass (kg) / Density (kg/L) = Volume (L)
+    const massFactor = WV_WEIGHT_UNITS[wvState.fromUnit] || 1.0;
+    const volFactor = WV_VOLUME_UNITS[wvState.toUnit] || 1.0;
+    const massInKg = amt * massFactor;
+    const volumeInLitres = massInKg / density;
+    calculatedResult = volumeInLitres / volFactor;
+
+    formulaStr = `Formula: Volume = Mass ÷ Density (${amt} ${wvState.fromUnit} ÷ ${density} kg/L = ${calculatedResult.toFixed(4)} ${wvState.toUnit})`;
+  } else {
+    // Volume to Weight: Volume (L) * Density (kg/L) = Mass (kg)
+    const volFactor = WV_VOLUME_UNITS[wvState.fromUnit] || 1.0;
+    const massFactor = WV_WEIGHT_UNITS[wvState.toUnit] || 1.0;
+    const volumeInLitres = amt * volFactor;
+    const massInKg = volumeInLitres * density;
+    calculatedResult = massInKg / massFactor;
+
+    formulaStr = `Formula: Mass = Volume × Density (${amt} ${wvState.fromUnit} × ${density} kg/L = ${calculatedResult.toFixed(4)} ${wvState.toUnit})`;
+  }
+
+  const formattedOutput = calculatedResult.toLocaleString('en-US', { maximumFractionDigits: 4 });
+  if (resultDisplay) resultDisplay.textContent = `${formattedOutput} ${wvState.toUnit}`;
+  if (mainResult) mainResult.textContent = `${amt} ${wvState.fromUnit} = ${formattedOutput} ${wvState.toUnit}`;
+  if (formulaBox) formulaBox.textContent = formulaStr;
+
+  renderWVMatrix();
+}
+
+function renderWVMatrix() {
+  const matrixGrid = document.getElementById('wv-matrix-grid');
+  if (!matrixGrid) return;
+  matrixGrid.innerHTML = '';
+
+  SUBSTANCES.forEach(sub => {
+    // 1 kg = (1 / density) Litre
+    const litPerKg = (1 / sub.density).toFixed(3);
+    const kgPerLit = sub.density.toFixed(3);
+    const isActive = wvState.substanceId === sub.id;
+
+    const card = document.createElement('div');
+    card.className = 'wv-matrix-card' + (isActive ? ' active-substance' : '');
+    card.innerHTML = `
+      <div class="wvm-name">${sub.nameEn}</div>
+      <div class="wvm-val">1 kg = ${litPerKg} L</div>
+      <div class="wvm-rev">1 Litre = ${kgPerLit} kg &bull; ρ: ${sub.density} kg/L</div>
+    `;
+    card.addEventListener('click', () => {
+      const substanceSelect = document.getElementById('wv-substance');
+      if (substanceSelect) {
+        substanceSelect.value = sub.id;
+        substanceSelect.dispatchEvent(new Event('change'));
+      }
+    });
+    matrixGrid.appendChild(card);
+  });
+}
+
+
+// ──────────────────────────────────────────────
+//  21. SUPER ADMIN PANEL, USER AUTH & EMERGENCY
+// ──────────────────────────────────────────────
+
+const SUPER_ADMIN_USER = 'superadmin';
+const SUPER_ADMIN_PASS = 'AdminMaster#2026';
+
+function initAuthAndAdmin() {
+  // Elements
+  const authBtn = document.getElementById('auth-btn');
+  const authBtnLabel = document.getElementById('auth-btn-label');
+  const authModal = document.getElementById('auth-modal-overlay');
+  const authCloseBtn = document.getElementById('auth-close-btn');
+
+  const tabLogin = document.getElementById('auth-tab-login');
+  const tabRegister = document.getElementById('auth-tab-register');
+  const tabAdmin = document.getElementById('auth-tab-admin');
+
+  const panelLogin = document.getElementById('panel-login');
+  const panelRegister = document.getElementById('panel-register');
+  const panelAdmin = document.getElementById('panel-admin');
+
+  const formLogin = document.getElementById('form-user-login');
+  const formRegister = document.getElementById('form-user-register');
+  const formAdmin = document.getElementById('form-super-admin');
+
+  // User Dashboard
+  const userDashModal = document.getElementById('user-dashboard-overlay');
+  const userDashClose = document.getElementById('ud-close-btn');
+  const userDashLogout = document.getElementById('ud-logout-btn');
+
+  // Super Admin Modal
+  const adminModal = document.getElementById('admin-panel-overlay');
+  const adminCloseBtn = document.getElementById('admin-close-btn');
+  const adminLogoutBtn = document.getElementById('admin-logout-btn');
+  const footerAdminLink = document.getElementById('footer-admin-link');
+
+  // Emergency elements
+  const emergencyOverlay = document.getElementById('emergency-overlay');
+  const emergencyUnlockBtn = document.getElementById('emergency-admin-unlock-btn');
+  const btnEmergencySuspend = document.getElementById('btn-emergency-suspend-toggle');
+  const btnEmergencyResume = document.getElementById('btn-emergency-resume-toggle');
+  const eccStatusLabel = document.getElementById('ecc-status-label');
+  const adminSysStatus = document.getElementById('admin-sys-status');
+  const emergencyMsgEl = document.getElementById('emergency-msg');
+  const customMsgInput = document.getElementById('ecc-custom-msg');
+  const btnSaveCustomMsg = document.getElementById('btn-save-emergency-msg');
+
+  // Initialize Default Users if empty
+  if (!localStorage.getItem('unitcalc_users')) {
+    const seedUsers = [
+      { id: 'USR-101', name: 'Demo User', email: 'user@example.com', pass: 'password123', role: 'user', status: 'Active', joined: new Date().toLocaleDateString() }
+    ];
+    localStorage.setItem('unitcalc_users', JSON.stringify(seedUsers));
+  }
+
+  // Check Emergency Status
+  function checkEmergencyState() {
+    const isSuspended = localStorage.getItem('site_emergency_suspended') === 'true';
+    const customMsg = localStorage.getItem('site_emergency_msg');
+
+    if (emergencyOverlay) {
+      emergencyOverlay.classList.toggle('hidden', !isSuspended);
+    }
+    if (customMsg && emergencyMsgEl) {
+      emergencyMsgEl.textContent = customMsg;
+    }
+    if (eccStatusLabel) {
+      eccStatusLabel.textContent = isSuspended ? 'CURRENT: SUSPENDED' : 'CURRENT: OPERATIONAL';
+      eccStatusLabel.classList.toggle('suspended', isSuspended);
+    }
+    if (adminSysStatus) {
+      adminSysStatus.textContent = isSuspended ? '🔴 SYSTEM SUSPENDED' : '● SYSTEM OPERATIONAL';
+      adminSysStatus.classList.toggle('suspended', isSuspended);
+    }
+    if (btnEmergencySuspend && btnEmergencyResume) {
+      btnEmergencySuspend.classList.toggle('hidden', isSuspended);
+      btnEmergencyResume.classList.toggle('hidden', !isSuspended);
+    }
+  }
+
+  checkEmergencyState();
+
+  // Check Current Session
+  function updateAuthUI() {
+    const session = JSON.parse(localStorage.getItem('unitcalc_session') || 'null');
+    if (session && authBtnLabel) {
+      if (session.role === 'admin') {
+        authBtnLabel.textContent = '👑 Super Admin';
+      } else {
+        authBtnLabel.textContent = `👤 ${session.name.split(' ')[0]}`;
+      }
+    } else if (authBtnLabel) {
+      authBtnLabel.textContent = 'Login / Register';
+    }
+  }
+  updateAuthUI();
+
+  // Auth Button Click
+  if (authBtn) {
+    authBtn.addEventListener('click', () => {
+      const session = JSON.parse(localStorage.getItem('unitcalc_session') || 'null');
+      if (!session) {
+        openAuthModal('login');
+      } else if (session.role === 'admin') {
+        openAdminModal();
+      } else {
+        openUserDashboard();
+      }
+    });
+  }
+
+  // Footer Admin Link
+  if (footerAdminLink) {
+    footerAdminLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      const session = JSON.parse(localStorage.getItem('unitcalc_session') || 'null');
+      if (session && session.role === 'admin') {
+        openAdminModal();
+      } else {
+        openAuthModal('admin');
+      }
+    });
+  }
+
+  // Auth Modal Tab Switcher
+  function openAuthModal(targetTab) {
+    if (!authModal) return;
+    authModal.classList.remove('hidden');
+
+    const tabs = [
+      { btn: tabLogin, panel: panelLogin, id: 'login' },
+      { btn: tabRegister, panel: panelRegister, id: 'register' },
+      { btn: tabAdmin, panel: panelAdmin, id: 'admin' }
+    ];
+
+    tabs.forEach(t => {
+      const isMatch = t.id === targetTab;
+      if (t.btn) t.btn.classList.toggle('active', isMatch);
+      if (t.panel) t.panel.classList.toggle('hidden', !isMatch);
+    });
+  }
+
+  if (tabLogin) tabLogin.addEventListener('click', () => openAuthModal('login'));
+  if (tabRegister) tabRegister.addEventListener('click', () => openAuthModal('register'));
+  if (tabAdmin) tabAdmin.addEventListener('click', () => openAuthModal('admin'));
+  if (authCloseBtn) authCloseBtn.addEventListener('click', () => authModal.classList.add('hidden'));
+
+  // Form: User Login
+  if (formLogin) {
+    formLogin.addEventListener('submit', () => {
+      const uVal = document.getElementById('login-username').value.trim();
+      const pVal = document.getElementById('login-password').value;
+      const users = JSON.parse(localStorage.getItem('unitcalc_users') || '[]');
+
+      const found = users.find(u => (u.email.toLowerCase() === uVal.toLowerCase() || u.name.toLowerCase() === uVal.toLowerCase()) && u.pass === pVal);
+
+      if (found) {
+        if (found.status === 'Suspended') {
+          showToast('⚠️ This account has been suspended by Administrator.');
+          return;
+        }
+        localStorage.setItem('unitcalc_session', JSON.stringify({
+          role: found.role || 'user',
+          name: found.name,
+          email: found.email,
+          id: found.id
+        }));
+        authModal.classList.add('hidden');
+        updateAuthUI();
+        showToast(`✓ Welcome, ${found.name}!`);
+      } else {
+        showToast('❌ Invalid email/username or password.');
+      }
+    });
+  }
+
+  // Form: User Register
+  if (formRegister) {
+    formRegister.addEventListener('submit', () => {
+      const priv = getPrivileges();
+      if (!priv.allowRegistration) {
+        showToast('⛔ Registration is currently closed by Super Administrator.');
+        return;
+      }
+
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-password').value;
+
+      if (pass.length < 6) {
+        showToast('⚠️ Password must be at least 6 characters.');
+        return;
+      }
+
+      let users = JSON.parse(localStorage.getItem('unitcalc_users') || '[]');
+      if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        showToast('⚠️ An account with this email already exists.');
+        return;
+      }
+
+      const newUser = {
+        id: `USR-${Math.floor(1000 + Math.random() * 9000)}`,
+        name,
+        email,
+        pass,
+        role: 'user',
+        status: 'Active',
+        joined: new Date().toLocaleDateString()
+      };
+
+      users.push(newUser);
+      localStorage.setItem('unitcalc_users', JSON.stringify(users));
+      localStorage.setItem('unitcalc_session', JSON.stringify({
+        role: 'user',
+        name,
+        email,
+        id: newUser.id
+      }));
+
+      authModal.classList.add('hidden');
+      updateAuthUI();
+      showToast(`✓ Account created! Welcome, ${name}!`);
+    });
+  }
+
+  // Form: Super Admin Login
+  if (formAdmin) {
+    formAdmin.addEventListener('submit', () => {
+      const adminUser = document.getElementById('admin-user').value.trim();
+      const adminPass = document.getElementById('admin-pass').value;
+
+      const masterUser = localStorage.getItem('custom_admin_user') || SUPER_ADMIN_USER;
+      const masterPass = localStorage.getItem('custom_admin_pass') || SUPER_ADMIN_PASS;
+
+      if (adminUser.toLowerCase() === masterUser.toLowerCase() && adminPass === masterPass) {
+        localStorage.setItem('unitcalc_session', JSON.stringify({
+          role: 'admin',
+          name: localStorage.getItem('custom_admin_name') || 'Master Super Administrator',
+          email: localStorage.getItem('custom_admin_email') || 'superadmin@unitcalc.internal',
+          id: 'ROOT-001'
+        }));
+        authModal.classList.add('hidden');
+        updateAuthUI();
+        showToast('👑 Super Administrator Access Verified!');
+        openAdminModal();
+      } else {
+        showToast('⛔ Access Denied: Invalid Administrative Credentials.');
+      }
+    });
+  }
+
+  // User Dashboard
+  function openUserDashboard() {
+    if (!userDashModal) return;
+    const session = JSON.parse(localStorage.getItem('unitcalc_session') || 'null');
+    if (!session) return;
+
+    const nameEl = document.getElementById('ud-name');
+    const emailEl = document.getElementById('ud-email');
+    if (nameEl) nameEl.textContent = session.name;
+    if (emailEl) emailEl.textContent = session.email;
+
+    userDashModal.classList.remove('hidden');
+  }
+
+  if (userDashClose) userDashClose.addEventListener('click', () => userDashModal.classList.add('hidden'));
+  if (userDashLogout) {
+    userDashLogout.addEventListener('click', () => {
+      localStorage.removeItem('unitcalc_session');
+      userDashModal.classList.add('hidden');
+      updateAuthUI();
+      showToast('Logged out successfully.');
+    });
+  }
+
+  // Super Admin Control Center Modal
+  function openAdminModal() {
+    if (!adminModal) return;
+    adminModal.classList.remove('hidden');
+    refreshAdminDashboard();
+    renderPrivilegeSection();
+  }
+
+  if (adminCloseBtn) adminCloseBtn.addEventListener('click', () => adminModal.classList.add('hidden'));
+  if (adminLogoutBtn) {
+    adminLogoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('unitcalc_session');
+      adminModal.classList.add('hidden');
+      updateAuthUI();
+      showToast('Super Admin Logged Out.');
+    });
+  }
+
+  // Super Admin Sidebar Navigation
+  document.querySelectorAll('.admin-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.admin-sec').forEach(s => s.classList.remove('active'));
+
+      btn.classList.add('active');
+      const secId = btn.dataset.sec;
+      const sec = document.getElementById(secId);
+      if (sec) sec.classList.add('active');
+      if (secId === 'adm-privileges') {
+        renderPrivilegeSection();
+      }
+    });
+  });
+
+  // Refresh Admin KPIs and Users
+  function refreshAdminDashboard() {
+    const users = JSON.parse(localStorage.getItem('unitcalc_users') || '[]');
+    const kpiUsers = document.getElementById('adm-kpi-users');
+    const kpiCalcs = document.getElementById('adm-kpi-calcs');
+    if (kpiUsers) kpiUsers.textContent = users.length;
+    if (kpiCalcs) kpiCalcs.textContent = localStorage.getItem('unitcalc_calcs_count') || '142';
+
+    renderAdminUsersTable();
+  }
+
+  function renderAdminUsersTable() {
+    const tbody = document.getElementById('adm-users-tbody');
+    if (!tbody) return;
+    const users = JSON.parse(localStorage.getItem('unitcalc_users') || '[]');
+    tbody.innerHTML = '';
+
+    users.forEach((u, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><code>${u.id}</code></td>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.email}</td>
+        <td><span style="font-weight:700; color:#8b5cf6;">${u.role}</span></td>
+        <td><span style="color:${u.status === 'Active' ? '#10b981' : '#ef4444'}; font-weight:700;">${u.status}</span></td>
+        <td>${u.joined || 'Recent'}</td>
+        <td style="display:flex; gap:0.4rem;">
+          <button class="btn-table-action suspend" data-idx="${idx}">${u.status === 'Active' ? 'Suspend' : 'Activate'}</button>
+          <button class="btn-table-action delete" data-idx="${idx}">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.btn-table-action.suspend').forEach(b => {
+      b.addEventListener('click', () => {
+        const i = parseInt(b.dataset.idx);
+        users[i].status = users[i].status === 'Active' ? 'Suspended' : 'Active';
+        localStorage.setItem('unitcalc_users', JSON.stringify(users));
+        renderAdminUsersTable();
+        showToast(`User status updated to ${users[i].status}`);
+      });
+    });
+
+    tbody.querySelectorAll('.btn-table-action.delete').forEach(b => {
+      b.addEventListener('click', () => {
+        const i = parseInt(b.dataset.idx);
+        if (confirm(`Are you sure you want to delete user ${users[i].name}?`)) {
+          users.splice(i, 1);
+          localStorage.setItem('unitcalc_users', JSON.stringify(users));
+          renderAdminUsersTable();
+          showToast('User account deleted.');
+        }
+      });
+    });
+  }
+
+  // Add User Manually Button
+  const btnAddUser = document.getElementById('btn-adm-add-user');
+  if (btnAddUser) {
+    btnAddUser.addEventListener('click', () => {
+      const name = prompt('Enter Full Name:');
+      if (!name) return;
+      const email = prompt('Enter Email Address:');
+      if (!email) return;
+      const pass = prompt('Enter Temporary Password:');
+      if (!pass) return;
+
+      const users = JSON.parse(localStorage.getItem('unitcalc_users') || '[]');
+      users.push({
+        id: `USR-${Math.floor(1000 + Math.random() * 9000)}`,
+        name,
+        email,
+        pass,
+        role: 'user',
+        status: 'Active',
+        joined: new Date().toLocaleDateString()
+      });
+      localStorage.setItem('unitcalc_users', JSON.stringify(users));
+      renderAdminUsersTable();
+      showToast('New user added successfully.');
+    });
+  }
+
+  // Formula Live Tester (RD Formula Verification)
+  const btnFtRd = document.getElementById('ft-rd-calc-btn');
+  if (btnFtRd) {
+    btnFtRd.addEventListener('click', () => {
+      const p = parseFloat(document.getElementById('ft-rd-p').value) || 3880;
+      const rate = parseFloat(document.getElementById('ft-rd-r').value) || 6.9;
+      const m = parseInt(document.getElementById('ft-rd-m').value) || 24;
+
+      const i = (rate / 100) / 4;
+      const q = m / 3;
+      const M = p * (Math.pow(1 + i, q) - 1) / (1 - Math.pow(1 + i, -1/3));
+      const totalDep = p * m;
+      let totalScheduleInt = 0;
+      let prevBal = 0;
+
+      for (let k = 1; k <= m; k++) {
+        const curBal = p * (Math.pow(1 + i, k / 3) - 1) / (1 - Math.pow(1 + i, -1/3));
+        const intEarned = curBal - prevBal - p;
+        totalScheduleInt += Math.round(intEarned);
+        prevBal = curBal;
+      }
+
+      const totalMat = totalDep + totalScheduleInt;
+      const resultEl = document.getElementById('ft-rd-result');
+      if (resultEl) {
+        resultEl.textContent = `Result: Total Deposit: ₹${totalDep.toLocaleString()} | Interest Earned: ₹${totalScheduleInt.toLocaleString()} | Maturity Value: ₹${totalMat.toLocaleString()} (Verified ✓)`;
+      }
+    });
+  }
+
+  // Emergency Suspend / Resume Buttons
+  if (btnEmergencySuspend) {
+    btnEmergencySuspend.addEventListener('click', () => {
+      if (confirm('⚠️ ARE YOU SURE you want to EMERGENCY SUSPEND the entire website? Public access will be blocked.')) {
+        localStorage.setItem('site_emergency_suspended', 'true');
+        checkEmergencyState();
+        showToast('🚨 SYSTEM SUSPENDED from Host.');
+      }
+    });
+  }
+
+  if (btnEmergencyResume) {
+    btnEmergencyResume.addEventListener('click', () => {
+      localStorage.setItem('site_emergency_suspended', 'false');
+      checkEmergencyState();
+      showToast('✅ All services resumed normally.');
+    });
+  }
+
+  if (emergencyUnlockBtn) {
+    emergencyUnlockBtn.addEventListener('click', () => {
+      openAuthModal('admin');
+    });
+  }
+
+  // Save Custom Emergency Notice
+  if (btnSaveCustomMsg && customMsgInput) {
+    btnSaveCustomMsg.addEventListener('click', () => {
+      const val = customMsgInput.value.trim();
+      if (val) {
+        localStorage.setItem('site_emergency_msg', val);
+        checkEmergencyState();
+        showToast('Custom suspension notice updated.');
+      }
+    });
+  }
+
+  // Save Profile Changes
+  const formUpdateProfile = document.getElementById('form-adm-update-profile');
+  if (formUpdateProfile) {
+    formUpdateProfile.addEventListener('submit', () => {
+      const newName = document.getElementById('adm-edit-name').value.trim();
+      const newEmail = document.getElementById('adm-edit-email').value.trim();
+      const newPass = document.getElementById('adm-new-pass').value;
+
+      if (newName) localStorage.setItem('custom_admin_name', newName);
+      if (newEmail) localStorage.setItem('custom_admin_email', newEmail);
+      if (newPass) localStorage.setItem('custom_admin_pass', newPass);
+
+      const pName = document.getElementById('adm-profile-name');
+      const pEmail = document.getElementById('adm-profile-email');
+      if (pName) pName.textContent = newName || 'Master Super Administrator';
+      if (pEmail) pEmail.textContent = newEmail || 'superadmin@unitcalc.internal';
+
+      showToast('Admin profile & credentials updated.');
+    });
+  }
+
+  // Cache Flusher
+  const btnFlushCache = document.getElementById('btn-adm-clear-cache');
+  if (btnFlushCache) {
+    btnFlushCache.addEventListener('click', () => {
+      localStorage.removeItem('unitcalc_visitor_stats');
+      localStorage.removeItem('unitcalc_calcs_count');
+      showToast('Temporary cache flushed.');
+    });
+  }
+
+  // ── Header Nav Link Privilege Interceptors (PDF, Compiler, Color, QR) ──
+  document.querySelectorAll('.header-controls .nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href') || '';
+      let toolId = null;
+      if (href.includes('pdf')) toolId = 'pdf';
+      else if (href.includes('compiler')) toolId = 'compiler';
+      else if (href.includes('color')) toolId = 'color';
+      else if (href.includes('qr')) toolId = 'qr';
+
+      if (toolId) {
+        const check = canAccess(toolId);
+        if (!check.allowed) {
+          e.preventDefault();
+          showPrivilegeLock(check.msg, check.reason === 'login_required');
+        }
+      }
+    });
+  });
+
+  // ── Privilege Lock Modal Listeners ──
+  const btnLockLogin = document.getElementById('btn-lock-login');
+  const btnLockDismiss = document.getElementById('btn-lock-dismiss');
+  if (btnLockLogin) {
+    btnLockLogin.addEventListener('click', () => {
+      hidePrivilegeLock();
+      openAuthModal('login');
+    });
+  }
+  if (btnLockDismiss) {
+    btnLockDismiss.addEventListener('click', hidePrivilegeLock);
+  }
+
+  // ── Super Admin Privilege Governance Section ──
+  function renderPrivilegeSection() {
+    const priv = getPrivileges();
+
+    // Gatekeeper Toggles
+    const reqLoginToggle = document.getElementById('priv-req-login-toggle');
+    const allowRegToggle = document.getElementById('priv-allow-reg-toggle');
+    if (reqLoginToggle) {
+      reqLoginToggle.checked = priv.requireLogin;
+      reqLoginToggle.onchange = () => {
+        priv.requireLogin = reqLoginToggle.checked;
+        savePrivileges(priv);
+        showToast(priv.requireLogin ? '🔐 Mandatory Login Requirement Enabled.' : '🔓 Public Tool Access Enabled.');
+      };
+    }
+    if (allowRegToggle) {
+      allowRegToggle.checked = priv.allowRegistration;
+      allowRegToggle.onchange = () => {
+        priv.allowRegistration = allowRegToggle.checked;
+        savePrivileges(priv);
+        showToast(priv.allowRegistration ? '✓ Public Registration Enabled.' : '⛔ Public Registration Disabled.');
+      };
+    }
+
+    // Global Master Tool Cards
+    const globalToolsContainer = document.getElementById('priv-global-tools-container');
+    if (globalToolsContainer) {
+      globalToolsContainer.innerHTML = '';
+      TOOLS_DEF.forEach(tool => {
+        const card = document.createElement('div');
+        card.className = 'priv-tool-card';
+        const isToolActive = priv.globalTools[tool.id] !== false;
+
+        let sectionsHTML = '';
+        if (tool.sections && tool.sections.length > 0) {
+          sectionsHTML = `
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-top:0.3rem;">Tool Sections</div>
+            <div class="ptc-sections-list">
+              ${tool.sections.map(s => {
+                const isSecActive = priv.globalSections[s.id] !== false;
+                return `
+                  <label class="ptc-sec-pill ${isSecActive ? 'granted' : 'denied'}">
+                    <input type="checkbox" data-sec-id="${s.id}" ${isSecActive ? 'checked' : ''}>
+                    <span>${s.name}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="ptc-header">
+            <div class="ptc-title-wrap">
+              <span class="ptc-icon">${tool.icon}</span>
+              <span class="ptc-name">${tool.name}</span>
+            </div>
+            <label class="switch-toggle" title="Toggle Tool Globally">
+              <input type="checkbox" data-tool-id="${tool.id}" ${isToolActive ? 'checked' : ''}>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          ${sectionsHTML}
+        `;
+
+        // Tool toggle listener
+        const toolInp = card.querySelector(`input[data-tool-id="${tool.id}"]`);
+        if (toolInp) {
+          toolInp.addEventListener('change', (e) => {
+            priv.globalTools[tool.id] = e.target.checked;
+            savePrivileges(priv);
+            showToast(`Tool '${tool.name}' ${e.target.checked ? 'Enabled Globally' : 'Disabled Globally'}`);
+          });
+        }
+
+        // Section checkboxes
+        card.querySelectorAll('input[data-sec-id]').forEach(secCheckbox => {
+          secCheckbox.addEventListener('change', (e) => {
+            const secId = e.target.dataset.secId;
+            priv.globalSections[secId] = e.target.checked;
+            const pill = e.target.closest('.ptc-sec-pill');
+            if (pill) {
+              pill.classList.toggle('granted', e.target.checked);
+              pill.classList.toggle('denied', !e.target.checked);
+            }
+            savePrivileges(priv);
+            showToast(`Section '${secId}' ${e.target.checked ? 'Enabled' : 'Disabled'}`);
+          });
+        });
+
+        globalToolsContainer.appendChild(card);
+      });
+    }
+
+    // Quick Action Buttons (Grant All / Lock All globally)
+    const btnGrantAllGlobal = document.getElementById('btn-priv-grant-all-global');
+    const btnLockAllGlobal = document.getElementById('btn-priv-lock-all-global');
+    if (btnGrantAllGlobal) {
+      btnGrantAllGlobal.onclick = () => {
+        TOOLS_DEF.forEach(t => {
+          priv.globalTools[t.id] = true;
+          t.sections.forEach(s => { priv.globalSections[s.id] = true; });
+        });
+        savePrivileges(priv);
+        renderPrivilegeSection();
+        showToast('✓ All tools and sections granted globally.');
+      };
+    }
+    if (btnLockAllGlobal) {
+      btnLockAllGlobal.onclick = () => {
+        if (confirm('Are you sure you want to lock all tools globally? Visitors will be blocked from using them.')) {
+          TOOLS_DEF.forEach(t => {
+            priv.globalTools[t.id] = false;
+            t.sections.forEach(s => { priv.globalSections[s.id] = false; });
+          });
+          savePrivileges(priv);
+          renderPrivilegeSection();
+          showToast('🔒 All tools have been locked globally.');
+        }
+      };
+    }
+
+    // User-Specific Privilege Manager
+    renderUserPrivilegeManager(priv);
+  }
+
+  function renderUserPrivilegeManager(priv) {
+    const userSelect = document.getElementById('priv-user-select');
+    if (!userSelect) return;
+    const users = JSON.parse(localStorage.getItem('unitcalc_users') || '[]');
+
+    if (users.length === 0) {
+      userSelect.innerHTML = '<option value="">No registered users found</option>';
+    } else {
+      userSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.name} (${u.email}) [${u.id}]</option>`).join('');
+    }
+
+    const userMatrixContainer = document.getElementById('priv-user-matrix-container');
+
+    function updateSelectedUserMatrix() {
+      const selectedUserId = userSelect.value;
+      const selectedUser = users.find(u => u.id === selectedUserId);
+      const nameEl = document.getElementById('pum-user-name');
+      const emailEl = document.getElementById('pum-user-email');
+      const roleEl = document.getElementById('pum-user-role');
+      const statusEl = document.getElementById('pum-user-status');
+
+      if (!selectedUser) {
+        if (nameEl) nameEl.textContent = 'None';
+        if (emailEl) emailEl.textContent = '—';
+        if (roleEl) roleEl.textContent = '—';
+        if (statusEl) statusEl.textContent = '—';
+        if (userMatrixContainer) userMatrixContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">No user selected.</p>';
+        return;
+      }
+
+      if (nameEl) nameEl.textContent = selectedUser.name;
+      if (emailEl) emailEl.textContent = selectedUser.email;
+      if (roleEl) roleEl.textContent = selectedUser.role || 'user';
+      if (statusEl) {
+        statusEl.textContent = selectedUser.status || 'Active';
+        statusEl.style.color = selectedUser.status === 'Active' ? '#10b981' : '#ef4444';
+      }
+
+      if (!userMatrixContainer) return;
+      userMatrixContainer.innerHTML = '';
+
+      const uPriv = priv.userPrivileges[selectedUserId] || { tools: {}, sections: {} };
+
+      TOOLS_DEF.forEach(tool => {
+        const card = document.createElement('div');
+        card.className = 'priv-tool-card';
+        const isToolAllowed = uPriv.tools?.[tool.id] !== false;
+
+        let sectionsHTML = '';
+        if (tool.sections && tool.sections.length > 0) {
+          sectionsHTML = `
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; margin-top:0.3rem;">Sections for ${selectedUser.name}</div>
+            <div class="ptc-sections-list">
+              ${tool.sections.map(s => {
+                const isSecAllowed = uPriv.sections?.[s.id] !== false;
+                return `
+                  <label class="ptc-sec-pill ${isSecAllowed ? 'granted' : 'denied'}">
+                    <input type="checkbox" class="u-sec-check" data-sec-id="${s.id}" ${isSecAllowed ? 'checked' : ''}>
+                    <span>${s.name}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="ptc-header">
+            <div class="ptc-title-wrap">
+              <span class="ptc-icon">${tool.icon}</span>
+              <span class="ptc-name">${tool.name}</span>
+            </div>
+            <label class="switch-toggle" title="Grant/Revoke Tool for User">
+              <input type="checkbox" class="u-tool-check" data-tool-id="${tool.id}" ${isToolAllowed ? 'checked' : ''}>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          ${sectionsHTML}
+        `;
+
+        card.querySelectorAll('.u-sec-check').forEach(chk => {
+          chk.addEventListener('change', () => {
+            const pill = chk.closest('.ptc-sec-pill');
+            if (pill) {
+              pill.classList.toggle('granted', chk.checked);
+              pill.classList.toggle('denied', !chk.checked);
+            }
+          });
+        });
+
+        userMatrixContainer.appendChild(card);
+      });
+    }
+
+    userSelect.onchange = updateSelectedUserMatrix;
+    updateSelectedUserMatrix();
+
+    // Grant All for User button
+    const btnGrantAllUser = document.getElementById('btn-priv-user-grant-all');
+    if (btnGrantAllUser) {
+      btnGrantAllUser.onclick = () => {
+        if (!userMatrixContainer) return;
+        userMatrixContainer.querySelectorAll('input[type="checkbox"]').forEach(c => {
+          c.checked = true;
+          const pill = c.closest('.ptc-sec-pill');
+          if (pill) { pill.classList.add('granted'); pill.classList.remove('denied'); }
+        });
+        showToast('All permissions marked as Granted for user. Click Save to persist.');
+      };
+    }
+
+    // Revoke All for User button
+    const btnRevokeAllUser = document.getElementById('btn-priv-user-revoke-all');
+    if (btnRevokeAllUser) {
+      btnRevokeAllUser.onclick = () => {
+        if (!userMatrixContainer) return;
+        userMatrixContainer.querySelectorAll('input[type="checkbox"]').forEach(c => {
+          c.checked = false;
+          const pill = c.closest('.ptc-sec-pill');
+          if (pill) { pill.classList.remove('granted'); pill.classList.add('denied'); }
+        });
+        showToast('All permissions marked as Revoked for user. Click Save to persist.');
+      };
+    }
+
+    // Save User Privileges button
+    const btnSaveUserPriv = document.getElementById('btn-priv-user-save');
+    if (btnSaveUserPriv) {
+      btnSaveUserPriv.onclick = () => {
+        const selectedUserId = userSelect.value;
+        if (!selectedUserId) return;
+
+        if (!priv.userPrivileges[selectedUserId]) {
+          priv.userPrivileges[selectedUserId] = { tools: {}, sections: {} };
+        }
+
+        userMatrixContainer.querySelectorAll('.u-tool-check').forEach(chk => {
+          priv.userPrivileges[selectedUserId].tools[chk.dataset.toolId] = chk.checked;
+        });
+
+        userMatrixContainer.querySelectorAll('.u-sec-check').forEach(chk => {
+          priv.userPrivileges[selectedUserId].sections[chk.dataset.secId] = chk.checked;
+        });
+
+        savePrivileges(priv);
+        showToast(`✓ Privileges saved successfully for user ${selectedUserId}!`);
+      };
+    }
+  }
+}
+
+// ──────────────────────────────────────────────
+//  22. INIT
 // ──────────────────────────────────────────────
 
 function init() {
   updateVisitorStats();
   initVisitorStats();
   initHeightCompare();
+  initWeightVolumeConverter();
+  initAuthAndAdmin();
   applyTheme();
   switchCategory('length');
   switchFinCategory('sip');
@@ -2269,4 +3685,58 @@ function init() {
 
 init();
 
+// ─── HAMBURGER MENU ───────────────────────────────────────────────────────────
+(function() {
+  const btn = document.getElementById('hamburger-btn');
+  const group = document.getElementById('nav-links-group');
+  if (!btn || !group) return;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    btn.classList.toggle('active');
+    group.classList.toggle('show');
+  });
+  document.addEventListener('click', (e) => {
+    if (!btn.contains(e.target) && !group.contains(e.target)) {
+      btn.classList.remove('active');
+      group.classList.remove('show');
+    }
+  });
+})();
+
+// ─── TAB SCROLL ARROWS ────────────────────────────────────────────────────────
+function scrollTabs(id, by) {
+  const el = document.getElementById(id);
+  if (el) el.scrollBy({ left: by, behavior: 'smooth' });
+}
+
+// ─── AUTH SLIDESHOW ───────────────────────────────────────────────────────────
+(function() {
+  let currentSlide = 0;
+  let timer;
+  function goToAuthSlide(n) {
+    const slides = document.querySelectorAll('.auth-slide');
+    const dots = document.querySelectorAll('.auth-dot');
+    if (!slides.length) return;
+    slides[currentSlide].classList.remove('active');
+    if (dots[currentSlide]) dots[currentSlide].classList.remove('active');
+    currentSlide = (n + slides.length) % slides.length;
+    slides[currentSlide].classList.add('active');
+    if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+  }
+  window.goToAuthSlide = goToAuthSlide;
+  function startSlideshow() {
+    clearInterval(timer);
+    timer = setInterval(() => goToAuthSlide(currentSlide + 1), 3500);
+  }
+  const overlay = document.getElementById('auth-modal-overlay');
+  if (overlay) {
+    new MutationObserver(() => {
+      if (!overlay.classList.contains('hidden')) startSlideshow();
+      else clearInterval(timer);
+    }).observe(overlay, { attributes: true, attributeFilter: ['class'] });
+  }
+  document.querySelectorAll('.auth-dot').forEach((d, i) => {
+    d.addEventListener('click', () => { goToAuthSlide(i); startSlideshow(); });
+  });
+})();
 
