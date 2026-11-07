@@ -13,9 +13,100 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Gujarati:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .redirect-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(4px);
+    }
+
+    .redirect-box {
+        text-align: center;
+        padding: 35px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #222;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+    }
+
+    .redirect-box h2 {
+        margin-bottom: 12px;
+    }
+
+    .redirect-box p {
+        margin-bottom: 20px;
+    }
+
+    .redirect-btn {
+        padding: 12px 28px;
+        border: none;
+        border-radius: 8px;
+        background: #2563eb;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .redirect-btn:hover {
+        background: #1d4ed8;
+    }
+
+    #countdown {
+        font-weight: bold;
+        color: #2563eb;
+    }
+  </style>
 </head>
 
 <body>
+
+  <div class="redirect-overlay">
+    <div class="redirect-box">
+      <h2>We've Moved!</h2>
+
+      <p>
+          You are being redirected to our new website in
+          <span id="countdown">5</span> seconds.
+      </p>
+
+      <button class="redirect-btn" onclick="redirectNow()">
+          Redirect Now
+      </button>
+    </div>
+  </div>
+
+  <script>
+      const redirectURL = "https://unit-calculator-20.vercel.app";
+
+      let seconds = 5;
+
+      const countdown = document.getElementById("countdown");
+
+      const timer = setInterval(() => {
+          seconds--;
+
+          countdown.textContent = seconds;
+
+          if (seconds <= 0) {
+              clearInterval(timer);
+              window.location.replace(redirectURL);
+          }
+      }, 1000);
+
+      function redirectNow() {
+          clearInterval(timer);
+          window.location.replace(redirectURL);
+      }
+  </script>
+
   <!-- Background Orbs -->
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
